@@ -1,31 +1,40 @@
-### **1. Objects in Python**
+#Python - Back to basics
 
-**Q**. Everything in Python are objects, how?
-**Ans:** Anything that is created by Python, is an instance of an inbuilt type. The newly created variable is actually just a reference to an object (a blob with some metadata) in the current namespace.
+***
+
+## Table of Contents
+
+
+* [01. Python and Objects](#1-python-and-objects)
+* [02. Names and Namespaces](#2-names-and-namespaces)
+
+
+### 1. Python and Objects
+
+#### 1. Everything in Python are objects, how?
+
+Anything that is created by Python, is an instance of an inbuilt type. The newly created variable is actually just a reference to an object (a blob with some metadata) in the current namespace.
 
 Hence if a new variable is created, for example `v = 1`, `v` is a reference to the object created by inheriting from the builtin `int` type.
 
-***
+#### 2. Every object has:
 
- Every object has:
-	* A single type (ie.. every object is an instance of an inbuilt type (class) like int, float etc.. (which is a class)
-	* A single value 
-	* Attributes (The object is an instance of a class (either builtin or not), and it inherits some attributes
-	* One or more base classes (The object is an instance of a builtin class, hence it inherits from it as well)
-	* A single unique ID (Since an object is an instance of a class, it is a running copy in memory and has an id)
-	* One or more names, in one or more namespaces (The object created in memory has a reference to it in the namespace)
+1. A single type (ie.. every object is an instance of an inbuilt type (class) like int, float etc.. (which is a class)
+1. A single value 
+1. Attributes (The object is an instance of a class (either builtin or not), and it inherits some attributes
+1. One or more base classes (The object is an instance of a builtin class, hence it inherits from it as well)
+1. A single unique ID (Since an object is an instance of a class, it is a running copy in memory and has an id)
+1. One or more names, in one or more namespaces (The object created in memory has a reference to it in the namespace)
 
-***
 
-**Q**.How does creating a variable `v = 1` work?
-	* When it sees the literal `1`, the python interpreter checks for the best fit builtin object type.
-	* In this case, the interpreter arrives at a conclusion that it's an `int`. 
-	* The interpreter creates the object in memory by inheriting from the builtin `int` type.
-	* It creates a reference named `v` to the newly created `int` object, in the current namespace.
+#### How does creating a variable `v = 1` work?
+1. When it sees the literal `1`, the python interpreter checks for the best fit builtin object type.
+2. In this case, the interpreter arrives at a conclusion that it's an `int`. 
+3. The interpreter creates the object in memory by inheriting from the builtin `int` type.
+4. It creates a reference named `v` to the newly created `int` object, in the current namespace.
 
-***
 
-**Q**. What does it actually mean when the Python interpreter prints the type of a variable (or other objects)? 
+#### What does it mean when the Python interpreter prints the type of a variable (or other objects)? 
 
 For example, 
 
@@ -38,22 +47,24 @@ Out[15]: type
 ```
 
 **Ans:** When the python interpreter runs the `type()` function on a variable or a builtin, it's doing the following:
-	* The type function follows the variable name or builtin name to the actual object.
-	* It reads the object metadata and prints the type.
+
+1. The type function follows the variable name or builtin name to the actual object.
+2. It reads the object metadata and prints the type.
 	
 In the above example, this is what `type(1)` does. 
 
 But if you run `type()` on an inbuilt function such as `int`,  it returns `type` which means it's a base type.
 
->**IMPORTANT** 
+
 > In the example above, the integer `1` is an instance of the inbuilt type `int`.
 
-***
+**IMPORTANT**
 
 1. Every object that is created by Python is an instance of an inbuilt type. 
 2. Every type inherits from another type which ultimately ends by inheriting from the `object` type.
 
-**Example**:
+
+**Code example**:
 ```python
 In [25]: v = 1
 
@@ -67,23 +78,23 @@ Out[28]: (int, object)
 ```
 
 The above example shows the following:
-	* We create an object of type `int` and assigns it a reference names `v` in the current namespace.
-	* This new object with name `v` inherits from the `int` builtin type, shown by the `type()` output.
-	* This new object named `v` is hence an instance of the builtin type `int`.
-	* The `__mro__` method is a way to understand the object inheritance order.
-	* The instance `v` doesn't have `__mro__` since it's an instance created from a class `int`.
-	* We can confirm that `int` is indeed a class by using `help(int)` which opens up the help showing it's a class.
-	* _Instances don't have a `__mro__` magic method, but classes do_.
-	* Hence, an `int.__mro__` shows how the `int` class inherits from the `object` class
 
-***
+* We create an object of type `int` and assigns it a reference names `v` in the current namespace.
+* This new object with name `v` inherits from the `int` builtin type, shown by the `type()` output.
+* This new object named `v` is hence an instance of the builtin type `int`.
+* The `__mro__` method is a way to understand the object inheritance order.
+* The instance `v` doesn't have `__mro__` since it's an instance created from a class `int`.
+* We can confirm that `int` is indeed a class by using `help(int)` which opens up the help showing it's a class.
+* _Instances don't have a `__mro__` magic method, but classes do_.
+* Hence, an `int.__mro__` shows how the `int` class inherits from the `object` class
+
+**Note**
 
 * Every object has one or more base classes.
-
-	* Every object created is an instance of a class which is either inbuilt like `int` or a custom made class.
-	* All classes whether custom or inbuilt, ultimately inherits from the `object` class.
+* Every object created is an instance of a class which is either inbuilt like `int` or a custom made class.
+* All classes whether custom or inbuilt, ultimately inherits from the `object` class.
 	
-To understand this, check the following:
+Check the example below to understand more:
 
 ```python
 In [98]: True.__mro__
@@ -430,7 +441,7 @@ ns.__dir__           ns.__init__          ns.__setattr__
 ns.__doc__           ns.__le__            ns.__sizeof__
 ns.__eq__            ns.__lt__            ns.__str__
 ns.__format__        ns.__ne__            ns.__subclasshook__
-ns.__ge__            ns.__new__           
+ns.__ge__            ns.__new__
 ```
 
 ***
