@@ -1,23 +1,31 @@
-#Python - Back to basics
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Python - Back to basics](#python---back-to-basics)
+  - [Table of Contents](#table-of-contents)
+    - [1. Python and Objects](#1-python-and-objects)
+      - [1. Everything in Python are objects, how?](#1-everything-in-python-are-objects-how)
+      - [2. Every object has:](#2-every-object-has)
+      - [How does creating a variable `v = 1` work?](#how-does-creating-a-variable-v--1-work)
+      - [What does it mean when the Python interpreter prints the type of a variable (or other objects)?](#what-does-it-mean-when-the-python-interpreter-prints-the-type-of-a-variable-or-other-objects)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+# Python - Back to basics
 
 ***
-
-## Table of Contents
-
-
-* [01. Python and Objects](#1-python-and-objects)
-* [02. Names and Namespaces](#2-names-and-namespaces)
 
 
 ### 1. Python and Objects
 
-#### 1. Everything in Python are objects, how?
+#### 1.1. Everything in Python is an object.
 
 Anything that is created by Python, is an instance of an inbuilt type. The newly created variable is actually just a reference to an object (a blob with some metadata) in the current namespace.
 
 Hence if a new variable is created, for example `v = 1`, `v` is a reference to the object created by inheriting from the builtin `int` type.
 
-#### 2. Every object has:
+#### 1.2. Every object has:
 
 1. A single type (ie.. every object is an instance of an inbuilt type (class) like int, float etc.. (which is a class)
 1. A single value 
@@ -27,14 +35,14 @@ Hence if a new variable is created, for example `v = 1`, `v` is a reference to t
 1. One or more names, in one or more namespaces (The object created in memory has a reference to it in the namespace)
 
 
-#### How does creating a variable `v = 1` work?
+#### 2.2. How does creating assigning a variable work?
 1. When it sees the literal `1`, the python interpreter checks for the best fit builtin object type.
 2. In this case, the interpreter arrives at a conclusion that it's an `int`. 
 3. The interpreter creates the object in memory by inheriting from the builtin `int` type.
 4. It creates a reference named `v` to the newly created `int` object, in the current namespace.
 
 
-#### What does it mean when the Python interpreter prints the type of a variable (or other objects)? 
+#### 2.3. What does it mean when the Python interpreter prints the type of a variable (or other objects)? 
 
 For example, 
 
@@ -253,7 +261,7 @@ Out[177]: 32
 
 ***
 
-###**2. Names and Namespaces**
+### 2. Names and Namespaces
 
 1. A name assignment (Creating a variable), renaming, deleting etc.. are all namespace operations.
 
@@ -396,9 +404,13 @@ When you assign a new object to an existing name in the namespace, it just chang
 
 ***
 
-**SimpleNamespace**
+#### 2.2. The `SimpleNamespace` class
 
 The module `types` in Python v3 comes with a class named `SimpleNamespace` which gives us a clean namespace to play with. 
+
+```python
+from types import SimpleNamespace
+```
 
 * In Python v2, it's equivalent to the following code:
 
@@ -407,7 +419,7 @@ class SimpleNamespace(object):
     pass
 ```
 
-* We can assign new methods in this namespace without the fear of overriding any existing ones.
+* New methods can be assigned in this namespace without the fear of overriding any existing ones.
 
 ```python
 In [64]: from types import SimpleNamespace
@@ -446,7 +458,7 @@ ns.__ge__            ns.__new__
 
 ***
 
-** Object Reference count**
+#### 2.2. Object Reference count
 
 * The class `getrefcount` from the module `sys` helps in understanding the references an object has currently.
 
@@ -504,7 +516,7 @@ Out[2]:
 
 ***
 
-**NameSpaces**
+#### 2.3. NameSpaces
 
 1. A namespace is a mapping of valid identifier names to objects. The objects may either exist in memory, or will be created at the time of assignment.
 
@@ -522,7 +534,7 @@ Out[2]:
 
 ***
 
-**Importing modules into namespaces**
+#### 2.4. Importing modules into namespaces
 
 
 ***
