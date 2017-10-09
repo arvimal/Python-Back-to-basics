@@ -43,15 +43,7 @@ Thus, when creating a variable `v = 1`, `v` is a reference to the object in memo
 5. A single unique ID (Since an object is an instance of a class, it is a running copy in memory and has an id)
 6. One or more names, in one or more namespaces (The object created in memory has a reference to it in the namespace)
 
-
-#### 2.2. How does creating assigning a variable work?
-1. When it sees the literal `1`, the python interpreter checks for the best fit builtin object type.
-2. In this case, the interpreter arrives at a conclusion that it's an `int`.
-3. The interpreter creates the object in memory by inheriting from the builtin `int` type.
-4. It creates a reference named `v` to the newly created `int` object, in the current namespace.
-
-
-#### 2.3. What does it mean when the Python interpreter prints the type of a variable (or other objects)?
+#### 1.3. Types with `type()`
 
 For example,
 
@@ -66,12 +58,9 @@ Out[15]: type
 **Ans:** When the python interpreter runs the `type()` function on a variable or a builtin, it's doing the following:
 
 1. The type function follows the variable name or builtin name to the actual object.
-2. It reads the object metadata and prints the type.
-
-In the above example, this is what `type(1)` does.
+2. It reads the object metadata and calls the magic method `__class__` on it.
 
 But if you run `type()` on an inbuilt function such as `int`,  it returns `type` which means it's a base type.
-
 
 > In the example above, the integer `1` is an instance of the inbuilt type `int`.
 
@@ -80,8 +69,18 @@ But if you run `type()` on an inbuilt function such as `int`,  it returns `type`
 1. Every object that is created by Python is an instance of an inbuilt type.
 2. Every type inherits from another type which ultimately ends by inheriting from the `object` type.
 
+**NOTE:** Calling type(`something`) internally calls `something.__class__`.
+
+```python3
+In [1]: type(1)
+Out[1]: int
+
+In [2]: (1).__class__
+Out[2]: int
+```
 
 **Code example**:
+
 ```python
 In [25]: v = 1
 
