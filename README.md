@@ -34,7 +34,7 @@ Hence if a new variable is created, for example `v = 1`, the following happens:
 
 Thus, when creating a variable `v = 1`, `v` is a reference to the object in memory created by inheriting from the builtin `int` type.
 
-#### 1.2. Every object has:
+Every object has:
 
 1. A single type (ie.. every object is an instance of an inbuilt type (class) like int, float etc.. (which is a class)
 2. A single value
@@ -42,6 +42,25 @@ Thus, when creating a variable `v = 1`, `v` is a reference to the object in memo
 4. One or more base classes (The object is an instance of a builtin class, hence it inherits from it as well)
 5. A single unique ID (Since an object is an instance of a class, it is a running copy in memory and has an id)
 6. One or more names, in one or more namespaces (The object created in memory has a reference to it in the namespace)
+
+#### 1.2. Objects and Attributes
+
+Object attributes are inherited from the class from which it was instantiated, through classes in the MRO chain, as well as its parent classes.
+
+To list the methods available for an object, use the `dir()` function on the object.
+
+```python3
+In [36]: dir(a)
+Out[36]:
+['__abs__',
+ '__add__',
+ '__and__',
+ '__bool__',
+ '__ceil__',
+..
+....
+<omitted>
+```
 
 #### 1.3. Types with `type()`
 
@@ -152,11 +171,13 @@ Out[35]: (int, object)
 
 -TODO-: Other than doing `import inspect; inspect.getmro(int)` how does `__mro__` gets executed when called as a magic method?
 
-The example above, shows the following:
+#### 1.5. Inheritance, and Method Resolution Order
 
-Check the example below to understand more:
+The `__class__` method is implemented for almost all the type classes which inherits from the `object` class.
 
-```python
+This allows to probe the `type` and other internals such as the MRO.
+
+```python3
 In [98]: True.__mro__
 ---------------------------------------------------------------------------
 AttributeError                            Traceback (most recent call last)
@@ -179,9 +200,7 @@ In [103]: True.__class__.__bases__[0].__bases__
 Out[103]: (object,)
 ```
 
-To understand the inheritance, we try checking the type or the inbuilt `True` condition.
-
-We find that `True.__mro__` does not exist. This is because it's an instance of another class.
+To understand the inheritance, we try checking the type or the inbuilt `True` condition. We find that `True.__mro__` does not exist. This is because it's an instance of another class.
 
 To find it, we can use either `type()` or `True.__class__`. This will print the class that it inherits from. Here, it's the class `bool`.
 
@@ -189,9 +208,7 @@ If we use `True.__class__.__bases__`, the python interpreter will show the base 
 
 `True.__class__.bases__[0].__bases__` should print the base class of `int`, ie.. the `object` class.
 
-***
-
-**Another example:**
+A second example:
 
 ```python
 In [128]: j = 2
@@ -210,22 +227,61 @@ Out[131]: object
 
 In [132]: j.__class__.__bases__
 Out[132]: (object,)
-
-In [133]: j.__class__.__base__.__bases__
-Out[133]: ()
-
-In [134]: j.__class__.__base__.__base__
-
-In [135]:
 ```
 
-* We define a variable `j` with a value `2.
-* It creates an instance of `int` class, which we can see using `type(j)` or `j.__class__`.
-* To see the base class of `j`, we can use `j.__class__.__base__` or `j.__class__.__bases__`
-	* The first one will show just a single parent class, while the second can show if there are multiple base classes.
-	* We end up understanding that `j` is an instance of class `int`, which inherits from class `object`.
-* If we again go ahead with finding the base class of `object`, we find it's empty since `object` is the most base.
+1. Define a variable `j` with a value `2, which creates an instance of the `int` class.
+2. Confirm this using `type()` or `instance.__class__`.
+3. Inspect the base class of `j` using `j.__class__.__base__` or `j.__class__.__bases__`
 
+`j.__class__.__base__` will show a single parent class, while `j.__class__.__bases__` shows if there are multiple parent classes.
+
+**NOTE:**
+* Hence, `j` is an instance of class `int`, and it inherits from class `object`.
+* Probing for the base class of `object` won't print anything since `object` is the ultimate base class.
+
+The same information can be pulled using the `getmro()` method in the `inspect` module.
+
+```python3
+In [37]: type(bool)
+Out[37]: type
+
+In [38]: inspect.getmro(bool)
+Out[38]: (bool, int, object)
+```
+
+#### 1.6. Callables
+
+_Read more on Callables at [https://arvimal.blog/2017/08/09/callables-in-python/](https://arvimal.blog/2017/08/09/callables-in-python/)_
+
+Instance objects are not callable, only functions, classes, or methods are callable.
+
+This means, the function/method/class or any object can be executed and returns a value (be it False as well)
+
+```python
+In [160]: x = int(1212.3)
+
+In [161]: y = "Hello"
+
+In [162]: callable(x)
+Out[162]: False
+
+In [163]: callable(y)
+Out[163]: False
+
+In [164]: class MyClass(object):
+   .....:     pass
+   .....:
+
+In [165]: callable(MyClass)
+Out[165]: True
+
+In [166]: def myfunc():
+   .....:     pass
+   .....:
+
+In [167]: callable(myfunc)
+Out[167]: True
+```
 
 ***
 
@@ -263,35 +319,6 @@ Out[150]: (int, object)
 
 ***
 
-* Callable
-
-Instance objects are not callable, only classes or functions are since it can be called and it returns something.
-
-```python
-In [160]: x = int(1212.3)
-
-In [161]: y = "Hello"
-
-In [162]: callable(x)
-Out[162]: False
-
-In [163]: callable(y)
-Out[163]: False
-
-In [164]: class MyClass(object):
-   .....:     pass
-   .....:
-
-In [165]: callable(MyClass)
-Out[165]: True
-
-In [166]: def myfunc():
-   .....:     pass
-   .....:
-
-In [167]: callable(myfunc)
-Out[167]: True
-```
 
 ***
 
