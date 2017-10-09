@@ -37,11 +37,11 @@ Thus, when creating a variable `v = 1`, `v` is a reference to the object in memo
 #### 1.2. Every object has:
 
 1. A single type (ie.. every object is an instance of an inbuilt type (class) like int, float etc.. (which is a class)
-1. A single value
-1. Attributes (The object is an instance of a class (either builtin or not), and it inherits some attributes
-1. One or more base classes (The object is an instance of a builtin class, hence it inherits from it as well)
-1. A single unique ID (Since an object is an instance of a class, it is a running copy in memory and has an id)
-1. One or more names, in one or more namespaces (The object created in memory has a reference to it in the namespace)
+2. A single value
+3. Attributes, mostly inherited from the builtin type
+4. One or more base classes (The object is an instance of a builtin class, hence it inherits from it as well)
+5. A single unique ID (Since an object is an instance of a class, it is a running copy in memory and has an id)
+6. One or more names, in one or more namespaces (The object created in memory has a reference to it in the namespace)
 
 
 #### 2.2. How does creating assigning a variable work?
