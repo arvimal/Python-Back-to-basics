@@ -105,39 +105,54 @@ Out[2]: int
 
 `Method Resolution Order` is the order in which a method is resolved.
 
-When a method is called on an object, it first looks up in the inherited methods (from the class from which the object was instantiated), and then moves to its parent class, if not found.
+When a method is called on an object, it first looks up in the inherited methods (from the class from which the object was instantiated), and if not found, moves to its parent class.
 
 Hence, an integer object will first look for the methods under the `int()` class, and then the parent class of `int()`, ie.. object().
+
 **Code example**:
 
 ```python
-In [25]: v = 1
+In [18]: a = 1
 
-In [26]: type(v)
-Out[26]: int
+In [19]: a
+Out[19]: 1
 
-In [27]: v.__mro # (Does not tab complete)
+In [20]: a.__mro__
+---------------------------------------------------------------------------
+AttributeError                            Traceback (most recent call last)
+<ipython-input-20-bc8e99ec9963> in <module>()
+----> 1 a.__mro__
 
-In [28]: int.__mro__
-Out[28]: (int, object)
+AttributeError: 'int' object has no attribute '__mro__'
+
+In [21]: int.__mro__
+Out[21]: (int, object)
 ```
 
-The above example shows the following:
+**NOTE:**
+* In the example above, `a.__mro__` will fail, since the `__mro__` method is not available on objects or its parent class.
 
-* We create an object of type `int` and assigns it a reference names `v` in the current namespace.
-* This new object with name `v` inherits from the `int` builtin type, shown by the `type()` output.
-* This new object named `v` is hence an instance of the builtin type `int`.
-* The `__mro__` method is a way to understand the object inheritance order.
-* The instance `v` doesn't have `__mro__` since it's an instance created from a class `int`.
-* We can confirm that `int` is indeed a class by using `help(int)` which opens up the help showing it's a class.
-* _Instances don't have a `__mro__` magic method, but classes do_.
-* Hence, an `int.__mro__` shows how the `int` class inherits from the `object` class
+The actual way to get the Method Resolution Order, is to use the `inspect` module
+
+```python3
+In [33]: import inspect
+
+In [34]: inspect.getmro(int)
+Out[34]: (int, object)
+
+In [35]: inspect.getmro(type(a))
+Out[35]: (int, object)
+```
 
 **Note**
 
 * Every object has one or more base classes.
 * Every object created is an instance of a class which is either inbuilt like `int` or a custom made class.
 * All classes whether custom or inbuilt, ultimately inherits from the `object` class.
+
+-TODO-: Other than doing `import inspect; inspect.getmro(int)` how does `__mro__` gets executed when called as a magic method?
+
+The example above, shows the following:
 
 Check the example below to understand more:
 
