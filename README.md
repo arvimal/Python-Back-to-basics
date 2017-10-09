@@ -21,14 +21,23 @@
 
 #### 1.1. Everything in Python is an object.
 
-Anything that is created by Python, is an instance of an inbuilt type. The newly created variable is actually just a reference to an object (a blob with some metadata) in the current namespace.
+Anything that is created by Python, is an instance of a inbuilt type.
 
-Hence if a new variable is created, for example `v = 1`, `v` is a reference to the object created by inheriting from the builtin `int` type.
+The newly created variable is a reference in the current namespace, to an object (a blob with some metadata) in memory.
+
+Hence if a new variable is created, for example `v = 1`, the following happens:
+
+1. The Python interpreter finds the appropriate in-built data type that can represent the data input. ie.. int(), float(), a function, class() etc..
+2. An instance of the appropriate type class is spawned in memory, which has a specific ID, and is assigned the value.
+3. The instance inherits the attributes of the type class.
+4. A pointer is created in the current namespace with the name `v`, that points to the instance in memory.
+
+Thus, when creating a variable `v = 1`, `v` is a reference to the object in memory created by inheriting from the builtin `int` type.
 
 #### 1.2. Every object has:
 
 1. A single type (ie.. every object is an instance of an inbuilt type (class) like int, float etc.. (which is a class)
-1. A single value 
+1. A single value
 1. Attributes (The object is an instance of a class (either builtin or not), and it inherits some attributes
 1. One or more base classes (The object is an instance of a builtin class, hence it inherits from it as well)
 1. A single unique ID (Since an object is an instance of a class, it is a running copy in memory and has an id)
@@ -37,14 +46,14 @@ Hence if a new variable is created, for example `v = 1`, `v` is a reference to t
 
 #### 2.2. How does creating assigning a variable work?
 1. When it sees the literal `1`, the python interpreter checks for the best fit builtin object type.
-2. In this case, the interpreter arrives at a conclusion that it's an `int`. 
+2. In this case, the interpreter arrives at a conclusion that it's an `int`.
 3. The interpreter creates the object in memory by inheriting from the builtin `int` type.
 4. It creates a reference named `v` to the newly created `int` object, in the current namespace.
 
 
-#### 2.3. What does it mean when the Python interpreter prints the type of a variable (or other objects)? 
+#### 2.3. What does it mean when the Python interpreter prints the type of a variable (or other objects)?
 
-For example, 
+For example,
 
 ```python3
 In [14]: type(1)
@@ -58,8 +67,8 @@ Out[15]: type
 
 1. The type function follows the variable name or builtin name to the actual object.
 2. It reads the object metadata and prints the type.
-	
-In the above example, this is what `type(1)` does. 
+
+In the above example, this is what `type(1)` does.
 
 But if you run `type()` on an inbuilt function such as `int`,  it returns `type` which means it's a base type.
 
@@ -68,7 +77,7 @@ But if you run `type()` on an inbuilt function such as `int`,  it returns `type`
 
 **IMPORTANT**
 
-1. Every object that is created by Python is an instance of an inbuilt type. 
+1. Every object that is created by Python is an instance of an inbuilt type.
 2. Every type inherits from another type which ultimately ends by inheriting from the `object` type.
 
 
@@ -101,7 +110,7 @@ The above example shows the following:
 * Every object has one or more base classes.
 * Every object created is an instance of a class which is either inbuilt like `int` or a custom made class.
 * All classes whether custom or inbuilt, ultimately inherits from the `object` class.
-	
+
 Check the example below to understand more:
 
 ```python
@@ -129,11 +138,11 @@ Out[103]: (object,)
 
 To understand the inheritance, we try checking the type or the inbuilt `True` condition.
 
-We find that `True.__mro__` does not exist. This is because it's an instance of another class. 
+We find that `True.__mro__` does not exist. This is because it's an instance of another class.
 
-To find it, we can use either `type()` or `True.__class__`. This will print the class that it inherits from. Here, it's the class `bool`. 
+To find it, we can use either `type()` or `True.__class__`. This will print the class that it inherits from. Here, it's the class `bool`.
 
-If we use `True.__class__.__bases__`, the python interpreter will show the base class of the class the instance is inheriting from, which is `int` here. Hence `True` is an instance of `bool`, and `bool` inherits from `int`. 
+If we use `True.__class__.__bases__`, the python interpreter will show the base class of the class the instance is inheriting from, which is `int` here. Hence `True` is an instance of `bool`, and `bool` inherits from `int`.
 
 `True.__class__.bases__[0].__bases__` should print the base class of `int`, ie.. the `object` class.
 
@@ -151,7 +160,7 @@ In [130]: j.__class__
 Out[130]: int
 
 In [131]: j.__class__.__base <TAB>
-j.__class__.__base__   j.__class__.__bases__  
+j.__class__.__base__   j.__class__.__bases__
 
 In [131]: j.__class__.__base__
 Out[131]: object
@@ -164,10 +173,10 @@ Out[133]: ()
 
 In [134]: j.__class__.__base__.__base__
 
-In [135]: 
+In [135]:
 ```
 
-* We define a variable `j` with a value `2. 
+* We define a variable `j` with a value `2.
 * It creates an instance of `int` class, which we can see using `type(j)` or `j.__class__`.
 * To see the base class of `j`, we can use `j.__class__.__base__` or `j.__class__.__bases__`
 	* The first one will show just a single parent class, while the second can show if there are multiple base classes.
@@ -177,7 +186,7 @@ In [135]:
 
 ***
 
-> **NOTE**: The module `inspect` is a very helpful one in understanding various features of an object. 
+> **NOTE**: The module `inspect` is a very helpful one in understanding various features of an object.
 
 **Another example**
 
@@ -194,7 +203,7 @@ AttributeError                            Traceback (most recent call last)
     441 def getmro(cls):
     442     "Return tuple of base classes (including cls) in method resolution order."
 --> 443     return cls.__mro__
-    444 
+    444
     445 # -------------------------------------------------------- function helpers
 
 AttributeError: 'int' object has no attribute '__mro__'
@@ -203,7 +212,7 @@ In [150]: inspect.getmro(type(j))
 Out[150]: (int, object)
 ```
 
-* The method `inspect.getmro(<x>)` prints the inheritance order of an object. Since `j` is an instance here, it doesn't have an mro. 
+* The method `inspect.getmro(<x>)` prints the inheritance order of an object. Since `j` is an instance here, it doesn't have an mro.
 
 * But if we use `type(j)`, it actually calls the type (ie.. `int` in our case) and runs on `inspect.getmro()` on it.
 
@@ -213,7 +222,7 @@ Out[150]: (int, object)
 
 * Callable
 
-Instance objects are not callable, only classes or functions are since it can be called and it returns something. 
+Instance objects are not callable, only classes or functions are since it can be called and it returns something.
 
 ```python
 In [160]: x = int(1212.3)
@@ -228,14 +237,14 @@ Out[163]: False
 
 In [164]: class MyClass(object):
    .....:     pass
-   .....: 
+   .....:
 
 In [165]: callable(MyClass)
 Out[165]: True
 
 In [166]: def myfunc():
    .....:     pass
-   .....: 
+   .....:
 
 In [167]: callable(myfunc)
 Out[167]: True
@@ -362,7 +371,7 @@ Explanation:
 * Since both `a` and `b` refers to the same address and hence the same object, both `id(a)` and `id(b)` are same.
 * Hence, `a == b` and `a is b` are same as well.
 
->**NOTE:** 
+>**NOTE:**
 > `a == b` evaluates the **value of the objects** that `a` and `b` refers to.
 > `a is b` evaluates the **address of the objects** that `a` and `b` refers to.
 
@@ -382,7 +391,7 @@ In [51]: a = 10
 In [52]: id(a)
 Out[52]: 139737075565888
 
-In [53]: a 
+In [53]: a
 Out[53]: 10
 
 In [54]: a = "Walking"
@@ -398,7 +407,7 @@ It is absolutely fine to assign the same name in a namespace to a different obje
 
 When you assign a new object to an existing name in the namespace, it just changes its reference to the new object. It no longer reference the old object.
 
->**NOTE:** 
+>**NOTE:**
 > A single name in the namespace cannot refer to multiple objects in memory, just like a file name cannot refer to multiple file content.
 
 
@@ -406,7 +415,7 @@ When you assign a new object to an existing name in the namespace, it just chang
 
 #### 2.2. The `SimpleNamespace` class
 
-The module `types` in Python v3 comes with a class named `SimpleNamespace` which gives us a clean namespace to play with. 
+The module `types` in Python v3 comes with a class named `SimpleNamespace` which gives us a clean namespace to play with.
 
 ```python
 from types import SimpleNamespace
@@ -437,7 +446,7 @@ In [69]: ns
 Out[69]: namespace(a='A', b='B')
 
 In [70]: ns.
-ns.a  ns.b  
+ns.a  ns.b
 
 In [70]: ns.a
 Out[70]: 'A'
@@ -491,7 +500,7 @@ Out[9]: 114
 In [1]: from sys import getrefcount
 
 In [2]: [(i, getrefcount(i)) for i in range(20)]
-Out[2]: 
+Out[2]:
 [(0, 2150),
  (1, 2097),
  (2, 740),
@@ -527,8 +536,8 @@ Out[2]:
 4. Dot notations ('.') are used to access in-direct namespaces:
 	* sys.version_info.major
 	* p.x
-	
-5. 
+
+5.
 
 
 
