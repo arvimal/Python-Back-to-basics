@@ -12,6 +12,7 @@
       - [1.6. Callables](#16-callables)
       - [1.7. Object size](#17-object-size)
     - [2. Names and Namespaces](#2-names-and-namespaces)
+      - [2.1. Names](#21-names)
       - [2.2. The `SimpleNamespace` class](#22-the-simplenamespace-class)
       - [2.2. Object Reference count](#22-object-reference-count)
       - [2.3. NameSpaces](#23-namespaces)
@@ -22,7 +23,6 @@
 # Python - Back to basics
 
 ***
-
 
 ### 1. Python and Objects
 
@@ -319,25 +319,26 @@ getsizeof(...)
 
 ### 2. Names and Namespaces
 
+#### 2.1. Names
+
+A Name is essentially similar to a dictionary. It is a mapping from a name to a value.
+
+Some important points on Names:
+
 1. A name assignment (Creating a variable), renaming, deleting etc.. are all namespace operations.
-
-2. Python uses names as a reference to objects in memory, and not like boxes containing a value.
-
+2. Python uses names as a _reference to objects in memory_, and not like boxes containing a value.
 3. Variable names are actually labels which you can add (or remove) to an object.
-
-4. Deleting a name just removes the refernce in the current namespace to the object in memory.
-
+4. Deleting a name just removes the reference in the current namespace to the object in memory.
 5. When all references (names) are removed from the namespace that refers a specific object, the object is garbage collected.
-
 6. It's not names (variables) that have types but objects, since objects are actually instances of specific classes (int, str, float etc..)
-
 7. Due to `**6**`, the same name which was referring to an int can be assigned to a str object
-**Q.** What happens when you do `a = 10` in a python REPL prompt?
 
-* The python interpreter creates an object in memory which is an instance of `class int`.
-* It then creates a name called `a` which is a pointer to the object instance.
+* What happens when you do `a = 10` in a python REPL prompt?
 
-**Q.** What happens with the following assignments?
+1. The python interpreter creates an object in memory which is an instance of `class int`.
+2. It then creates a name called `a` which is a pointer to the object instance.
+
+* What happens with the following assignments?
 
 ```python
 In [7]: a = 300
