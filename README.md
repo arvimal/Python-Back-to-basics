@@ -53,14 +53,32 @@ Out[14]: int
 
 In [15]: type(int)
 Out[15]: type
+
+In [16]: help(int)
+Help on class int in module builtins:
+
+class int(object)
+ |  int(x=0) -> integer
+ |  int(x, base=10) -> integer
+ |
+ |  Convert a number or string to an integer, or return 0 if no arguments
+ |  are given.  If x is a number, return x.__int__().  For floating point
+ |  numbers, this truncates towards zero.
+ |
+ |  If x is not a number or if base is given, then x must be a string,
+ |  bytes, or bytearray instance representing an integer literal in the
+ |  given base.  The literal can be preceded by '+' or '-' and be surrounded
+ |  by whitespace.  The base defaults to 10.  Valid bases are 0 and 2-36.
+ |  Base 0 means to interpret the base from the string as an integer literal.
+ |  >>> int('0b100', base=0)
+ |  4
 ```
 
-**Ans:** When the python interpreter runs the `type()` function on a variable or a builtin, it's doing the following:
+When the python interpreter calls the `type()` function on a variable or a builtin, it does the following:
 
-1. The type function follows the variable name or builtin name to the actual object.
+1. The `type()` function follows the variable name or builtin name to the actual object in memory.
 2. It reads the object metadata and calls the magic method `__class__` on it.
-
-But if you run `type()` on an inbuilt function such as `int`,  it returns `type` which means it's a base type.
+3. This prints the type of the class from which the object was created, which is of course, the class of the object as well.
 
 > In the example above, the integer `1` is an instance of the inbuilt type `int`.
 
@@ -69,7 +87,9 @@ But if you run `type()` on an inbuilt function such as `int`,  it returns `type`
 1. Every object that is created by Python is an instance of an inbuilt type.
 2. Every type inherits from another type which ultimately ends by inheriting from the `object` type.
 
-**NOTE:** Calling type(`something`) internally calls `something.__class__`.
+**NOTE:**
+
+* Calling type(`something`) internally calls `something.__class__`.
 
 ```python3
 In [1]: type(1)
@@ -79,6 +99,15 @@ In [2]: (1).__class__
 Out[2]: int
 ```
 
+* If you call `type()` on an inbuilt such as `int`,  it returns `type` which means it's a base type.
+
+#### 1.4. Method Resolution Order [MRO]
+
+`Method Resolution Order` is the order in which a method is resolved.
+
+When a method is called on an object, it first looks up in the inherited methods (from the class from which the object was instantiated), and then moves to its parent class, if not found.
+
+Hence, an integer object will first look for the methods under the `int()` class, and then the parent class of `int()`, ie.. object().
 **Code example**:
 
 ```python
