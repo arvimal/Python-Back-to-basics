@@ -3,12 +3,19 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Python - Back to basics](#python---back-to-basics)
-  - [Table of Contents](#table-of-contents)
     - [1. Python and Objects](#1-python-and-objects)
-      - [1. Everything in Python are objects, how?](#1-everything-in-python-are-objects-how)
-      - [2. Every object has:](#2-every-object-has)
-      - [How does creating a variable `v = 1` work?](#how-does-creating-a-variable-v--1-work)
-      - [What does it mean when the Python interpreter prints the type of a variable (or other objects)?](#what-does-it-mean-when-the-python-interpreter-prints-the-type-of-a-variable-or-other-objects)
+      - [1.1. Everything in Python is an object.](#11-everything-in-python-is-an-object)
+      - [1.2. Objects and Attributes](#12-objects-and-attributes)
+      - [1.3. Types with `type()`](#13-types-with-type)
+      - [1.4. Method Resolution Order [MRO]](#14-method-resolution-order-mro)
+      - [1.5. Inheritance, and Method Resolution Order](#15-inheritance-and-method-resolution-order)
+      - [1.6. Callables](#16-callables)
+      - [1.7. Object size](#17-object-size)
+    - [2. Names and Namespaces](#2-names-and-namespaces)
+      - [2.2. The `SimpleNamespace` class](#22-the-simplenamespace-class)
+      - [2.2. Object Reference count](#22-object-reference-count)
+      - [2.3. NameSpaces](#23-namespaces)
+      - [2.4. Importing modules into namespaces](#24-importing-modules-into-namespaces)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
