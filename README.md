@@ -12,10 +12,11 @@
       - [1.6. Callables](#16-callables)
       - [1.7. Object size](#17-object-size)
     - [2. Names and Namespaces](#2-names-and-namespaces)
-      - [2.1. Names](#21-names)
-      - [2.2. The `SimpleNamespace` class](#22-the-simplenamespace-class)
-      - [2.2. Object Reference count](#22-object-reference-count)
-      - [2.3. NameSpaces](#23-namespaces)
+      - [2.1. Names and Namespaces](#21-names-and-namespaces)
+      - [2.2. `id()`, `is` and `==`](#22-id-is-and-)
+      - [2.3. Object Attributes and NameSpaces](#23-object-attributes-and-namespaces)
+        - [2.3.1. Creating a custom namespace](#231-creating-a-custom-namespace)
+      - [2.4. Object Reference count](#24-object-reference-count)
       - [2.4. Importing modules into namespaces](#24-importing-modules-into-namespaces)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -335,13 +336,28 @@ getsizeof(...)
 
 #### 2.1. Names and Namespaces
 
-A Name is a mapping to a value, ie.. a reference to objects in memory.
+1. A Name is a mapping to a value, ie.. a reference to objects in memory.
 
-A Namespace is similar to a dictionary, ie.. it is a set of name to object references.
+2. A Namespace is similar to a dictionary, ie.. it is a set of valid identifier names to object references. The objects may either exist in memory, or will be created at the time of assignment.
+
+3. Operations such as assignment (=), renaming, and `del` are all namespace operations.
+
+4. A **scope** is a section on Python code where a namespace is directly accessible.
+
+5. Dot notations ('.') are used to access in-direct namespaces:
+    sys.version_info.major
+    p.x
+    "Hello".__add__(" World!")
+
+**NOTE:**
+>A Namespace cannot carry more than one similar name.
+>As an example, multiple variables named `a` cannot exist in a namespace.
 
 _Read more on Python Namespaces at [Python3 Classes documentation](https://docs.python.org/3/tutorial/classes.html#python-scopes-and-namespaces)_
 
 A `dir()` function can list the names in the current namespace.
+
+* Example 1
 
 ```python3
 In [46]: dir()
@@ -414,6 +430,7 @@ Explanation:
 
 The builtins `id()`, as well as `is` and `==` are valuable to understand the semantics of names in a namespace.
 
+* Example 1
 
 ```python
 In [26]: a = 400
@@ -509,22 +526,59 @@ When a new object is assigned to an existing name in the namespace, it changes t
 
 ***
 
-#### 2.3. The `SimpleNamespace` class
+#### 2.3. Object Attributes and NameSpaces
 
-The `types` module in Python v3 comes with a class named `SimpleNamespace` which provides a clean namespace to play with.
+Objects get their attributes from the base type the object is instantiated from.
+
+Object attributes are similar to dictionaries, since the attributes of an object are names to methods within the object namespace.
+
+```python3
+In [19]: a = "test"
+
+In [20]: a.__class__
+Out[20]: str
+
+In [21]: dir(a)
+Out[21]:
+['__add__',
+ '__class__',
+ '__contains__',
+ '__delattr__',
+ '__dir__',
+ '__doc__',
+ '__eq__',
+ '__format__',
+ '__ge__',
+ '__getattribute__',
+...
+.....
+ 'startswith',
+ 'strip',
+ 'swapcase',
+ 'title',
+ 'translate',
+ 'upper',
+ 'zfill']
+```
+
+##### 2.3.1. Creating a custom namespace
+
+Creating a custom name-space can help in understanding the concept better.
+
+In Python v3.3, the `types` module include a class named `SimpleNamespace` which provides a clean namespace to play with.
 
 ```python
 from types import SimpleNamespace
 ```
 
-* In Python v2, it's equivalent to the following code:
+* In Python v2, it's equivalent to the following code, ie.. creating a Class and setting the attributes
 
 ```python
 class SimpleNamespace(object):
     pass
 ```
 
-* New methods can be assigned in this namespace without the fear of overriding any existing ones.
+* New methods can be assigned in this namespace without overriding any existing ones.
 
 ```python
 In [64]: from types import SimpleNamespace
@@ -550,20 +604,15 @@ Out[70]: 'A'
 In [71]: ns.b
 Out[71]: 'B'
 
-In [72]: ns.__
-ns.__class__         ns.__getattribute__  ns.__reduce__
-ns.__delattr__       ns.__gt__            ns.__reduce_ex__
-ns.__dict__          ns.__hash__          ns.__repr__
-ns.__dir__           ns.__init__          ns.__setattr__
-ns.__doc__           ns.__le__            ns.__sizeof__
-ns.__eq__            ns.__lt__            ns.__str__
-ns.__format__        ns.__ne__            ns.__subclasshook__
-ns.__ge__            ns.__new__
+In [72]: ns.__dict__
+Out[72]: {'a': 'A', 'b': 'B'}
 ```
+
+The `__dict__` special method is available in both Python v2 and v3, for the object, and it returns a dictionary.
 
 ***
 
-#### 2.2. Object Reference count
+#### 2.4. Object Reference count
 
 * The class `getrefcount` from the module `sys` helps in understanding the references an object has currently.
 
@@ -590,7 +639,7 @@ In [9]: getrefcount(b)
 Out[9]: 114
 ```
 
-* Python pre-creates many integer objects for effeciency reasons (Still not sure what effeciency)
+* Python pre-creates many integer objects for effeciency reasons (Mostly speed)
 
 ```python
 In [1]: from sys import getrefcount
@@ -619,21 +668,116 @@ Out[2]:
  (19, 45)]
 ```
 
+#### 2.5. Various methods to set names in a namespace
+
+There are multiple ways to set a name for an object, in a namespace.
+
+##### 2.5.1. Direct assignment
+
+```python3
+In [42]: a = 1
+
+In [43]: b = a
+
+In [44]: c = b = a
+
+In [45]: c
+Out[45]: 1
+
+In [46]: b
+Out[46]: 1
+
+In [47]: a
+Out[47]: 1
+```
+
+##### 2.5.2. Tuple unpacking
+
+Multiple names can be assigned in a single go, if the RHS values correspond the LHS names.
+
+RHS has to be iterable so that the assignment will work properly. The RHS can be a list, a tuple, or a series of data.
+
+* Calling the names one-by-one unpacks the tuple and returns the single value.
+* When all the names are called simultaneously, they are returned as a tuple.
+
+
+```python3
+In [48]: a, b, c = 10, 20, 30
+
+In [49]: a
+Out[49]: 10
+
+In [50]: b
+Out[50]: 20
+
+In [51]: c
+Out[51]: 30
+
+In [52]: a, b, c
+Out[52]: (10, 20, 30)
+```
+
+##### 2.5.3. Extended iterable tuple unpacking (only in Python3)
+
+This feature exists only in Python v3.
+
+The examples below are self-explanatory.
+
+* Example 1
+
+```python3
+In [54]: a, b, c, *d = "HelloWorld!"
+
+In [55]: a
+Out[55]: 'H'
+
+In [56]: b
+Out[56]: 'e'
+
+In [57]: c
+Out[57]: 'l'
+
+In [58]: d
+Out[58]: ['l', 'o', 'W', 'o', 'r', 'l', 'd', '!']
+```
+
+* Example 2:
+
+```python3
+In [59]: a, *b, c = "HelloWorld"
+
+In [60]: a
+Out[60]: 'H'
+
+In [61]: b
+Out[61]: ['e', 'l', 'l', 'o', 'W', 'o', 'r', 'l']
+
+In [62]: c
+Out[62]: 'd'
+
+In [64]: a, b, c
+Out[64]: ('H', ['e', 'l', 'l', 'o', 'W', 'o', 'r', 'l'], 'd')
+```
+
+* Example 3:
+
+```python3
+In [65]: a, *b, c = "Hi"
+
+In [66]: a
+Out[66]: 'H'
+
+In [67]: c
+Out[67]: 'i'
+
+In [68]: b
+Out[68]: []
+
+In [69]: a, b, c
+Out[69]: ('H', [], 'i')
+```
+
 ***
-
-#### 2.3. NameSpaces
-
-1. A namespace is a mapping of valid identifier names to objects. The objects may either exist in memory, or will be created at the time of assignment.
-
-2. Simple assignment (=), renaming, and `del` are all namespace operations.
-
-3. A **scope** is a section on Python code where a namespace is directly accessible.
-
-4. Dot notations ('.') are used to access in-direct namespaces:
-	* sys.version_info.major
-	* p.x
-
-5.
 
 
 
