@@ -338,16 +338,18 @@ getsizeof(...)
 
 1. A Name is a mapping to a value, ie.. a reference to objects in memory.
 
-2. A Namespace is similar to a dictionary, ie.. it is a set of valid identifier names to object references. The objects may either exist in memory, or will be created at the time of assignment.
+2. A Namespace is similar to a dictionary, ie.. it is a set of valid identifier names to object references.
 
 3. Operations such as assignment (=), renaming, and `del` are all namespace operations.
 
-4. A **scope** is a section on Python code where a namespace is directly accessible.
+4. A **_scope_** is a section where a namespace is directly accessible, for example, `dir()` shows the current namespace scope.
 
 5. Dot notations ('.') are used to access in-direct namespaces:
     sys.version_info.major
     p.x
     "Hello".__add__(" World!")
+
+6. It's better not to overwrite builtin names with custom ones, unless there is a strong reason to do so.
 
 **NOTE:**
 >A Namespace cannot carry more than one similar name.
@@ -779,13 +781,41 @@ Out[69]: ('H', [], 'i')
 
 ***
 
+#### 2.6. Overwriting builtin names
 
+It is not a good practice to overwrite builtin names, since programs may start acting weirdly.
+
+For example, `len()` calls the dunder method `__len__()` on the object (provided the type supports `len()`), and returns the length. Imagine overwriting it with a custom value.
+
+```python3
+In [4]: a = "A"
+
+In [5]: len(a)
+Out[5]: 1
+
+In [6]: len = "Hello"
+
+In [7]: len(a)
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+<ipython-input-7-af8c77e09569> in <module>()
+----> 1 len(a)
+
+TypeError: 'str' object is not callable
+```
+
+Fortunately, overwriting `len` only means that it hides the builtin with the custom assignment. Deleting the custom assignment will re-instate it to the previous state, by unhiding it. The name will resolve to the builtins since it can't find the name in the local namespace.
+
+Continuing from the previous assignments:
+
+```python3
+In [8]: del len
+
+In [9]: len(a)
+Out[9]: 1
+```
 
 ***
 
-#### 2.4. Importing modules into namespaces
+#### 2.7. Function locals
 
-
-***
-
-**Functions**
