@@ -3,26 +3,26 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Python - Back to basics](#python---back-to-basics)
-    - [1. Python and Objects](#1-python-and-objects)
-      - [1.1. Everything in Python is an object.](#11-everything-in-python-is-an-object)
-      - [1.2. Objects and Attributes](#12-objects-and-attributes)
-      - [1.3. Types with `type()`](#13-types-with-type)
-      - [1.4. Method Resolution Order [MRO]](#14-method-resolution-order-mro)
-      - [1.5. Inheritance, and Method Resolution Order](#15-inheritance-and-method-resolution-order)
-      - [1.6. Callables](#16-callables)
-      - [1.7. Object size](#17-object-size)
-    - [2. Names and Namespaces](#2-names-and-namespaces)
-      - [2.1. Names and Namespaces](#21-names-and-namespaces)
-      - [2.2. `id()`, `is` and `==`](#22-id-is-and-)
-      - [2.3. Object Attributes and NameSpaces](#23-object-attributes-and-namespaces)
-        - [2.3.1. Creating a custom namespace](#231-creating-a-custom-namespace)
-      - [2.4. Object Reference count](#24-object-reference-count)
-      - [2.5. Various methods to set names in a namespace](#25-various-methods-to-set-names-in-a-namespace)
-        - [2.5.1. Direct assignment](#251-direct-assignment)
-        - [2.5.2. Tuple unpacking](#252-tuple-unpacking)
-        - [2.5.3. Extended iterable tuple unpacking (only in Python3)](#253-extended-iterable-tuple-unpacking-only-in-python3)
-      - [2.6. Overwriting builtin names](#26-overwriting-builtin-names)
-      - [2.7. Function locals](#27-function-locals)
+  - [1. Python and Objects](#1-python-and-objects)
+    - [1.1. Everything in Python is an object.](#11-everything-in-python-is-an-object)
+    - [1.2. Objects and Attributes](#12-objects-and-attributes)
+    - [1.3. Types with `type()`](#13-types-with-type)
+    - [1.4. Method Resolution Order [MRO]](#14-method-resolution-order-mro)
+    - [1.5. Inheritance, and Method Resolution Order](#15-inheritance-and-method-resolution-order)
+    - [1.6. Callables](#16-callables)
+    - [1.7. Object size](#17-object-size)
+  - [2. Names and Namespaces](#2-names-and-namespaces)
+    - [2.1. Names and Namespaces](#21-names-and-namespaces)
+    - [2.2. `id()`, `is` and `==`](#22-id-is-and-)
+    - [2.3. Object Attributes and NameSpaces](#23-object-attributes-and-namespaces)
+      - [2.3.1. Creating a custom namespace](#231-creating-a-custom-namespace)
+    - [2.4. Object Reference count](#24-object-reference-count)
+    - [2.5. Various methods to set names in a namespace](#25-various-methods-to-set-names-in-a-namespace)
+      - [2.5.1. Direct assignment](#251-direct-assignment)
+      - [2.5.2. Tuple unpacking](#252-tuple-unpacking)
+      - [2.5.3. Extended iterable tuple unpacking (only in Python3)](#253-extended-iterable-tuple-unpacking-only-in-python3)
+    - [2.6. Overwriting builtin names](#26-overwriting-builtin-names)
+    - [2.7. Function locals and Scopes](#27-function-locals-and-scopes)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -30,9 +30,9 @@
 
 ***
 
-### 1. Python and Objects
+## 1. Python and Objects
 
-#### 1.1. Everything in Python is an object.
+### 1.1. Everything in Python is an object.
 
 Anything that is created by Python, is an instance of a inbuilt type.
 
@@ -58,7 +58,7 @@ Every object has:
 
 ***
 
-#### 1.2. Objects and Attributes
+### 1.2. Objects and Attributes
 
 Object attributes are inherited from the class from which it was instantiated, through classes in the MRO chain, as well as its parent classes.
 
@@ -79,7 +79,7 @@ Out[36]:
 
 ***
 
-#### 1.3. Types with `type()`
+### 1.3. Types with `type()`
 
 For example,
 
@@ -139,7 +139,7 @@ Out[2]: int
 
 ***
 
-#### 1.4. Method Resolution Order [MRO]
+### 1.4. Method Resolution Order [MRO]
 
 `Method Resolution Order` is the order in which a method is resolved.
 
@@ -167,10 +167,9 @@ In [21]: int.__mro__
 Out[21]: (int, object)
 ```
 
-**NOTE:**
-* In the example above, `a.__mro__` will fail, since the `__mro__` method is not available on objects or its parent class.
+* `a.__mro__` will fail, since the `__mro__` method is not available on objects or its parent class.
 
-The actual way to get the Method Resolution Order, is to use the `inspect` module
+* The actual way to get the Method Resolution Order, is to use the `inspect` module
 
 ```python3
 In [33]: import inspect
@@ -182,7 +181,7 @@ In [35]: inspect.getmro(type(a))
 Out[35]: (int, object)
 ```
 
-**Note**
+**NOTE**
 
 * Every object has one or more base classes.
 * Every object created is an instance of a class which is either inbuilt like `int` or a custom made class.
@@ -192,11 +191,13 @@ Out[35]: (int, object)
 
 ***
 
-#### 1.5. Inheritance, and Method Resolution Order
+### 1.5. Inheritance, and Method Resolution Order
 
 The `__class__` method is implemented for almost all the type classes which inherits from the `object` class.
 
 This allows to probe the `type` and other internals such as the MRO.
+
+* Example 1:
 
 ```python3
 In [98]: True.__mro__
@@ -229,7 +230,7 @@ If we use `True.__class__.__bases__`, the python interpreter will show the base 
 
 `True.__class__.bases__[0].__bases__` should print the base class of `int`, ie.. the `object` class.
 
-A second example:
+* Example 2:
 
 ```python3
 In [128]: j = 2
@@ -272,7 +273,7 @@ Out[38]: (bool, int, object)
 
 ***
 
-#### 1.6. Callables
+### 1.6. Callables
 
 _Read more on Callables at [https://arvimal.blog/2017/08/09/callables-in-python/](https://arvimal.blog/2017/08/09/callables-in-python/)_
 
@@ -308,7 +309,7 @@ Out[167]: True
 
 ***
 
-#### 1.7. Object size
+### 1.7. Object size
 
 Object size in memory can be parsed using the `getsizeof` method from the `sys` module
 
@@ -337,9 +338,9 @@ getsizeof(...)
 
 ***
 
-### 2. Names and Namespaces
+## 2. Names and Namespaces
 
-#### 2.1. Names and Namespaces
+### 2.1. Names and Namespaces
 
 1. A Name is a mapping to a value, ie.. a reference to objects in memory.
 
@@ -433,7 +434,7 @@ Explanation:
 
 ***
 
-#### 2.2. `id()`, `is` and `==`
+### 2.2. `id()`, `is` and `==`
 
 The builtins `id()`, as well as `is` and `==` are valuable to understand the semantics of names in a namespace.
 
@@ -486,7 +487,7 @@ NameError                                 Traceback (most recent call last)
 NameError: name 'a' is not defined
 ```
 
-Explanation:
+**Explanation:**
 
 1. Created an object of value `400` and assigned it a name `a`.
 2. Created another namespace variable `b` and assigned it to be `a`. This makes `b` refer the same address `a` refers to.
@@ -533,7 +534,7 @@ When a new object is assigned to an existing name in the namespace, it changes t
 
 ***
 
-#### 2.3. Object Attributes and NameSpaces
+### 2.3. Object Attributes and NameSpaces
 
 Objects get their attributes from the base type the object is instantiated from.
 
@@ -568,7 +569,7 @@ Out[21]:
  'zfill']
 ```
 
-##### 2.3.1. Creating a custom namespace
+#### 2.3.1. Creating a custom namespace
 
 Creating a custom name-space can help in understanding the concept better.
 
@@ -619,7 +620,7 @@ The `__dict__` special method is available in both Python v2 and v3, for the obj
 
 ***
 
-#### 2.4. Object Reference count
+### 2.4. Object Reference count
 
 * The class `getrefcount` from the module `sys` helps in understanding the references an object has currently.
 
@@ -675,11 +676,11 @@ Out[2]:
  (19, 45)]
 ```
 
-#### 2.5. Various methods to set names in a namespace
+### 2.5. Various methods to set names in a namespace
 
 There are multiple ways to set a name for an object, in a namespace.
 
-##### 2.5.1. Direct assignment
+#### 2.5.1. Direct assignment
 
 ```python3
 In [42]: a = 1
@@ -698,7 +699,7 @@ In [47]: a
 Out[47]: 1
 ```
 
-##### 2.5.2. Tuple unpacking
+#### 2.5.2. Tuple unpacking
 
 Multiple names can be assigned in a single go, if the RHS values correspond the LHS names.
 
@@ -724,7 +725,7 @@ In [52]: a, b, c
 Out[52]: (10, 20, 30)
 ```
 
-##### 2.5.3. Extended iterable tuple unpacking (only in Python3)
+#### 2.5.3. Extended iterable tuple unpacking (only in Python3)
 
 This feature exists only in Python v3.
 
@@ -786,7 +787,7 @@ Out[69]: ('H', [], 'i')
 
 ***
 
-#### 2.6. Overwriting builtin names
+### 2.6. Overwriting builtin names
 
 It is not a good practice to overwrite builtin names, since programs may start acting weirdly.
 
@@ -822,5 +823,28 @@ Out[9]: 1
 
 ***
 
-#### 2.7. Function locals
+### 2.7. Function locals and Scopes
+
+As said earlier, there are different scopes, depending on where the call is made. Outer, Inner ...
+
+* Example 1 (Accessing Outer scope):
+
+```python
+In [16]: x = 1
+
+In [17]: def outer():
+    ...:     print("%d is in outer scope" % (x))
+    ...:
+
+In [18]: outer()
+1 is in outer scope
+```
+
+**NOTE:**
+  1. In the code snippet above, the function is the inner scope since that is the code being executed.
+  2. `x` falls outside the inner scope, and hence is in the outer scope.
+
+Calling `outer()` can access the name `x` from the outer scope properly.
+
+* Example 2 (Inside scope / local scope):
 
