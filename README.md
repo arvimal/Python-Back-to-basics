@@ -17,7 +17,12 @@
       - [2.3. Object Attributes and NameSpaces](#23-object-attributes-and-namespaces)
         - [2.3.1. Creating a custom namespace](#231-creating-a-custom-namespace)
       - [2.4. Object Reference count](#24-object-reference-count)
-      - [2.4. Importing modules into namespaces](#24-importing-modules-into-namespaces)
+      - [2.5. Various methods to set names in a namespace](#25-various-methods-to-set-names-in-a-namespace)
+        - [2.5.1. Direct assignment](#251-direct-assignment)
+        - [2.5.2. Tuple unpacking](#252-tuple-unpacking)
+        - [2.5.3. Extended iterable tuple unpacking (only in Python3)](#253-extended-iterable-tuple-unpacking-only-in-python3)
+      - [2.6. Overwriting builtin names](#26-overwriting-builtin-names)
+      - [2.7. Function locals](#27-function-locals)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
