@@ -210,7 +210,7 @@ If we use `True.__class__.__bases__`, the python interpreter will show the base 
 
 A second example:
 
-```python
+```python3
 In [128]: j = 2
 
 In [129]: type(j)
@@ -255,9 +255,9 @@ _Read more on Callables at [https://arvimal.blog/2017/08/09/callables-in-python/
 
 Instance objects are not callable, only functions, classes, or methods are callable.
 
-This means, the function/method/class or any object can be executed and returns a value (be it False as well)
+This means, the function/method/class or any object can be executed and returns a value (can be `False` as well)
 
-```python
+```python3
 In [160]: x = int(1212.3)
 
 In [161]: y = "Hello"
@@ -283,62 +283,32 @@ In [167]: callable(myfunc)
 Out[167]: True
 ```
 
-***
+#### 1.7. Object size
 
-> **NOTE**: The module `inspect` is a very helpful one in understanding various features of an object.
+Object size in memory can be parsed using the `getsizeof` method from the `sys` module
 
-**Another example**
-
-```python
-In [146]: j = 2
-
-In [149]: inspect.getmro(j)
----------------------------------------------------------------------------
-AttributeError                            Traceback (most recent call last)
-<ipython-input-149-24257c6e2e0d> in <module>()
-----> 1 inspect.getmro(j)
-
-/usr/lib64/python3.5/inspect.py in getmro(cls)
-    441 def getmro(cls):
-    442     "Return tuple of base classes (including cls) in method resolution order."
---> 443     return cls.__mro__
-    444
-    445 # -------------------------------------------------------- function helpers
-
-AttributeError: 'int' object has no attribute '__mro__'
-
-In [150]: inspect.getmro(type(j))
-Out[150]: (int, object)
-```
-
-* The method `inspect.getmro(<x>)` prints the inheritance order of an object. Since `j` is an instance here, it doesn't have an mro.
-
-* But if we use `type(j)`, it actually calls the type (ie.. `int` in our case) and runs on `inspect.getmro()` on it.
-
-* Since `int` is a class [See `help(int)`], `inspect.getmro()` returns the MRO properly.
-
-***
-
-
-***
-
-* How to get the memory size of an object?
-
-```python
+```python3
 In [174]: import sys
 
 In [175]: sys.getsizeof("Hello")
 Out[175]: 54
+
+In [176]: sys.getsizeof(2**30 + 1)
+Out[176]: 32
 ```
 
-The above example doesn't just show the size of integer, but it actually shows the size of the instance object created from the `int` class.
+The help on `sys` shows:
 
-```python
-In [177]: sys.getsizeof(2**30 + 1)
-Out[177]: 32
+```python3
+In [42]: help(sys.getsizeof)
+
+Help on built-in function getsizeof in module sys:
+
+getsizeof(...)
+    getsizeof(object, default) -> int
+
+    Return the size of object in bytes.
 ```
-
-***
 
 ### 2. Names and Namespaces
 
