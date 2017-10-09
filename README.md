@@ -569,6 +569,8 @@ Out[21]:
  'zfill']
 ```
 
+***
+
 #### 2.3.1. Creating a custom namespace
 
 Creating a custom name-space can help in understanding the concept better.
@@ -676,9 +678,13 @@ Out[2]:
  (19, 45)]
 ```
 
+***
+
 ### 2.5. Various methods to set names in a namespace
 
 There are multiple ways to set a name for an object, in a namespace.
+
+***
 
 #### 2.5.1. Direct assignment
 
@@ -698,6 +704,8 @@ Out[46]: 1
 In [47]: a
 Out[47]: 1
 ```
+
+***
 
 #### 2.5.2. Tuple unpacking
 
@@ -724,6 +732,8 @@ Out[51]: 30
 In [52]: a, b, c
 Out[52]: (10, 20, 30)
 ```
+
+***
 
 #### 2.5.3. Extended iterable tuple unpacking (only in Python3)
 
@@ -789,7 +799,7 @@ Out[69]: ('H', [], 'i')
 
 ### 2.6. Overwriting builtin names
 
-It is not a good practice to overwrite builtin names, since programs may start acting weirdly.
+It is not a good practice to overwrite builtin names, since programs may start acting weirdly. But nevertheless, it is possible.
 
 For example, `len()` calls the dunder method `__len__()` on the object (provided the type supports `len()`), and returns the length. Imagine overwriting it with a custom value.
 
@@ -823,11 +833,13 @@ Out[9]: 1
 
 ***
 
-### 2.7. Function locals and Scopes
+### 2.7. Function locals, Scopes, and Name lookups
 
-As said earlier, there are different scopes, depending on where the call is made. Outer, Inner ...
+_Refer more on Scopes and related stuff at [Python3 Programming FAQs](https://docs.python.org/3/faq/programming.html#why-am-i-getting-an-unboundlocalerror-when-the-variable-has-a-value)_
 
-* Example 1 (Accessing Outer scope):
+As said earlier, there are different scopes, depending on where the call is made. Inner and Outer scopes.
+
+* Example 1 (Outer scope):
 
 ```python
 In [16]: x = 1
@@ -844,7 +856,161 @@ In [18]: outer()
   1. In the code snippet above, the function is the inner scope since that is the code being executed.
   2. `x` falls outside the inner scope, and hence is in the outer scope.
 
-Calling `outer()` can access the name `x` from the outer scope properly.
+Executing the function `outer()` can access the name `x`, even though `x` is outside the local scope of `outer()`.
 
-* Example 2 (Inside scope / local scope):
+* Example 2 (Local scope):
 
+```python3
+In [24]: a = "Hello"
+
+In [25]: def local():
+    ...:     a = "Hi"
+    ...:     print("%s is in the local scope" % (a))
+    ...:
+
+In [26]: local()
+Hi is in the local scope
+
+In [27]: a
+Out[27]: 'Hello'
+```
+
+Here, `a` is called within the `local()` function. Due to the name lookup resolution method, the first lookup happens in the local scope and proceeds further out. The first hit returns the value.
+
+Even though `a` was defined twice, once outside the local scope and then within the local scope, the lookup always starts in the local scope and hence used the value defined within `local()`.
+
+But, calling `a` prints `Hello`, since our local scope is outside the local scope of the function `local()`. The function `local()` does not touch the variable outside its scope at all, since the same name was available within its local scope.
+
+* Example 3 (Accessing a name in the local scope, before assignment)
+
+Depending on where the name is and how it was referenced, the output may differ.
+
+```python3
+In [35]: a = "Hello"
+
+In [36]: def test():
+    ...:     print("{}".format(a))
+    ...:     a = "Hi"
+    ...:
+    ...:
+
+In [37]: test()
+---------------------------------------------------------------------------
+UnboundLocalError                         Traceback (most recent call last)
+<ipython-input-37-ea594c21b25d> in <module>()
+----> 1 test()
+
+<ipython-input-36-68b59252c182> in test()
+      1 def test():
+----> 2     print("{}".format(a))
+      3     a = "Hi"
+      4
+
+UnboundLocalError: local variable 'a' referenced before assignment
+
+In [38]: a
+Out[38]: 'Hello'
+```
+
+In the example above, `a` was defined both within the local scope and outer scope. But the function call errored out with an `UnboundLocalError` since the name was defined after the reference.
+
+* Example 4: (Enforced access of outer scope, and overcoming `UnboundLocalError`)
+
+We can enforce the reference to happen from the outer scope, using the `global()` keyword.
+
+```python3
+In [69]: a
+Out[69]: 'Hello'
+
+In [70]: def test():
+    ...:     global a
+    ...:     print("Calling `a` from outer-scope, `a` = {}".format(a))
+    ...:     a = "Hi"
+    ...:     print("Calling `a` after setting it in local scope, `a` = {}".format(a))
+    ...:
+
+In [71]: a
+Out[71]: 'Hello'
+
+In [72]: test()
+Calling `a` from outer-scope, `a` = Hello
+Calling `a` after setting it in local scope, `a` = Hi
+
+In [81]: a
+Out[81]: 'Hi'
+```
+
+**IMPORTANT:**
+>Due to the use of the `global` keyword on `a`, the inner scope of `test()` was able to manipulate it.
+>Hence, setting `a = "Hi"` within the local scope of `test()` changes the value of `a` in the outer scope.
+>This can be proven by calling `a` outside the scope of `test()`.
+
+* Example 5: (Accessing an outer scope using `nonlocal` keyword)
+
+This is similar to the `global` keyword, and gives access to names in outer scopes.
+
+As per the [Python3 documentation on `nonlocal`](https://docs.python.org/3/reference/simple_stmts.html#nonlocal):
+
+
+```python3
+
+```
+
+### 2.8. The Built-in namespace, `locals()`, and `globals()`
+
+The `locals()` and `globals()` built-in methods help to list out the local and global scope respectively.
+
+Ideally, the local and global scope are the same since the local scope contains both local and global names. Hence `locals()` and `globals()` print out the local scope. But it can differ, depending on the code that is executed.
+
+For example, the code below will print a different local scope altogether
+
+```python3
+In [38]: def hello():
+    ...:     a = 100
+    ...:     b = 1024
+    ...:     print("Printing Local scope", locals())
+    ...:     print("###############################")
+    ...:     print("Printing Global scope", globals())
+    ...:
+
+In [39]: hello()
+Printing Local scope {'b': 1024, 'a': 100}
+###############################
+Printing Global scope
+{'__name__': '__main__', '__doc__': 'Automatically created module for IPython interactive environment', '__package__': None, '__loader__': None, '__spec__': None, '__builtin__': <module 'builtins' (built-in)>, ...
+....
+...... <Long output omitted for brevity>
+```
+
+In the function `hello()` defined above, the local scope is restricted to the variables within the function, and hence `locals()` can only print the objects tied to the names `a` and `b`.
+
+But the global scope is the one outside of the local scope of the function `hello()`. Therefore, it prints the entire scope outside the local scope.
+
+**NOTE:**
+>The local scope change depending where the code is executed.
+>The local scope of a function is the scope within the function, and the global scope is outside it.
+
+The local and global scope are dictionaries, and the local/global namespace can be accessed through `locals()` and `globals()` builtins.
+
+```python3
+In [43]: a = 100
+
+In [44]: locals()['a']
+Out[44]: 100
+
+In [45]: locals()['a'] = 500
+
+In [46]: a
+Out[46]: 500
+```
+
+Even though the names within a scope can be accessed as such, it's not suggested to do so. Read about `fast locals` in Python, to understand why.
+
+### 2.9. The `import` statement
+
+The `import` statement allows us to bring in a set of features and functions into the current namespace.
+
+* How does `import` work?
+
+1. A module (a library which provides features) is called into the local namespace using `import <module_name>`.
+2. The python interpreter loads the
