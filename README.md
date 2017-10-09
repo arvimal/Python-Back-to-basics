@@ -50,6 +50,8 @@ Every object has:
 5. A single unique ID (Since an object is an instance of a class, it is a running copy in memory and has an id)
 6. One or more names, in one or more namespaces (The object created in memory has a reference to it in the namespace)
 
+***
+
 #### 1.2. Objects and Attributes
 
 Object attributes are inherited from the class from which it was instantiated, through classes in the MRO chain, as well as its parent classes.
@@ -68,6 +70,8 @@ Out[36]:
 ....
 <omitted>
 ```
+
+***
 
 #### 1.3. Types with `type()`
 
@@ -127,6 +131,8 @@ Out[2]: int
 
 * If you call `type()` on an inbuilt such as `int`,  it returns `type` which means it's a base type.
 
+***
+
 #### 1.4. Method Resolution Order [MRO]
 
 `Method Resolution Order` is the order in which a method is resolved.
@@ -177,6 +183,8 @@ Out[35]: (int, object)
 * All classes whether custom or inbuilt, ultimately inherits from the `object` class.
 
 -TODO-: Other than doing `import inspect; inspect.getmro(int)` how does `__mro__` gets executed when called as a magic method?
+
+***
 
 #### 1.5. Inheritance, and Method Resolution Order
 
@@ -256,6 +264,8 @@ In [38]: inspect.getmro(bool)
 Out[38]: (bool, int, object)
 ```
 
+***
+
 #### 1.6. Callables
 
 _Read more on Callables at [https://arvimal.blog/2017/08/09/callables-in-python/](https://arvimal.blog/2017/08/09/callables-in-python/)_
@@ -290,6 +300,8 @@ In [167]: callable(myfunc)
 Out[167]: True
 ```
 
+***
+
 #### 1.7. Object size
 
 Object size in memory can be parsed using the `getsizeof` method from the `sys` module
@@ -317,11 +329,43 @@ getsizeof(...)
     Return the size of object in bytes.
 ```
 
+***
+
 ### 2. Names and Namespaces
 
-#### 2.1. Names
+#### 2.1. Names and Namespaces
 
-A Name is essentially similar to a dictionary. It is a mapping from a name to a value.
+A Name is a mapping to a value, ie.. a reference to objects in memory.
+
+A Namespace is similar to a dictionary, ie.. it is a set of name to object references.
+
+A `dir()` function can list the names in the current namespace.
+
+```python3
+In [46]: dir()
+Out[46]:
+['In',
+ 'Out',
+ '_',
+ '_1',
+ '_11',
+ '_14',
+ '_19',
+ '_2',
+ '_21',
+ '_26',
+...
+....
+ '_iii',
+ '_oh',
+ '_sh',
+ 'a',
+ 'exit',
+ 'get_ipython',
+ 'inspect',
+ 'quit',
+ 'sys']
+```
 
 Some important points on Names:
 
@@ -333,12 +377,12 @@ Some important points on Names:
 6. It's not names (variables) that have types but objects, since objects are actually instances of specific classes (int, str, float etc..)
 7. Due to `**6**`, the same name which was referring to an int can be assigned to a str object
 
-* What happens when you do `a = 10` in a python REPL prompt?
+* What happens when `a = 10` in a python REPL prompt?
 
 1. The python interpreter creates an object in memory which is an instance of `class int`.
 2. It then creates a name called `a` which is a pointer to the object instance.
 
-* What happens with the following assignments?
+* Example 1
 
 ```python
 In [7]: a = 300
@@ -352,17 +396,22 @@ In [10]: a
 Out[10]: 400
 ```
 
-The following things happen with the above code:
+Explanation:
 
-* An object of type `int` is created in memory and assigned a value of `300`.
-* A name `a` is created in the current namespace and points to the address of the object.
-* Hence, when `a` is called from the prompt, the interpreter fetches the content from memory.
+1. An object of type `int` is created in memory and assigned a value of `300`.
+2. A name `a` is created in the current namespace and points to the address of the object.
+3. Hence, when `a` is called from the prompt, the interpreter fetches the content from memory, ie.. `300`.
 
-* When `a` is assigned `400`, a new object is created in memory with a value of `400`.
-* The name `a` is removed, and is newly created to point to the new object instance of `400`.
-* Since the object with value `300` is not referenced anymore, it is garbage collected.
+4. When `a` is assigned `400`, a new object is created in memory with a value of `400`.
+5. The name `a` in the namespace is now set to point to the new object `400`.
+6. Since the object with value `300` is not referenced anymore, it is garbage collected.
 
-**Q.** Explain what happens with the following code:
+***
+
+#### 2.2. `id()`, `is` and `==`
+
+The builtins `id()`, as well as `is` and `==` are valuable to understand the semantics of names in a namespace.
+
 
 ```python
 In [26]: a = 400
@@ -413,25 +462,23 @@ NameError: name 'a' is not defined
 
 Explanation:
 
-* We create an object of value `400` and give it a name `a`.
-* We create another namespace variable and assign it `a`.
-* This make `b` refer to the same address  that `a` refers.
-* Since both `a` and `b` refers to the same address and hence the same object, both `id(a)` and `id(b)` are same.
-* Hence, `a == b` and `a is b` are same as well.
+1. Created an object of value `400` and assigned it a name `a`.
+2. Created another namespace variable `b` and assigned it to be `a`. This makes `b` refer the same address `a` refers to.
+3. Since both `a` and `b` refers to the same address and hence the same object, both `id(a)` and `id(b)` are same.
+4. Hence, `a == b` and `a is b` are same as well.
+5. `del b` deletes the name from the namespace, and does not touch the object in memory.
+6. Since `a` still refers to the object, it can be accessed by calling `a`.
+7. When `del a` is executed, it removes the existing reference to the object.
+8. Once no more references exist in the namespace to an object in memory, the object is garbage-collected.
 
->**NOTE:**
+>**IMPORTANT:**
 > `a == b` evaluates the **value of the objects** that `a` and `b` refers to.
 > `a is b` evaluates the **address of the objects** that `a` and `b` refers to.
 
 >ie.. `a == b` check if both `a` and `b` has the same value
 > while `a is b` checks if both `a` and `b` refers to the exact same object (same address).
 
-* `del b` deletes the name `b` from the namespace.
-* Since `a` still refers to the object, it can still be accessed through `a`.
-* When `del a` is run, it removes the existing reference to the object, and thus there exists no more references.
-* This will garbage collect the object in memory.
-
-* Can we use the same name in a namespace for a different object type?
+* Can we use the same name in a namespace, for a different object type?
 
 ```python
 In [51]: a = 10
@@ -451,19 +498,18 @@ In [56]: a
 Out[56]: 'Walking'
 ```
 
-It is absolutely fine to assign the same name in a namespace to a different object, as in the example above.
+Assigning an existing name to another value/type is possible. It sets the pointer to the new type, which is an entirely different object altogether.
 
-When you assign a new object to an existing name in the namespace, it just changes its reference to the new object. It no longer reference the old object.
+When a new object is assigned to an existing name in the namespace, it changes the reference to the new object, and no longer reference the old object.
 
 >**NOTE:**
 > A single name in the namespace cannot refer to multiple objects in memory, just like a file name cannot refer to multiple file content.
 
-
 ***
 
-#### 2.2. The `SimpleNamespace` class
+#### 2.3. The `SimpleNamespace` class
 
-The module `types` in Python v3 comes with a class named `SimpleNamespace` which gives us a clean namespace to play with.
+The `types` module in Python v3 comes with a class named `SimpleNamespace` which provides a clean namespace to play with.
 
 ```python
 from types import SimpleNamespace
