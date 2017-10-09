@@ -339,6 +339,8 @@ A Name is a mapping to a value, ie.. a reference to objects in memory.
 
 A Namespace is similar to a dictionary, ie.. it is a set of name to object references.
 
+_Read more on Python Namespaces at [Python3 Classes documentation](https://docs.python.org/3/tutorial/classes.html#python-scopes-and-namespaces)_
+
 A `dir()` function can list the names in the current namespace.
 
 ```python3
