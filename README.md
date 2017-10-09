@@ -22,7 +22,9 @@
       - [2.5.2. Tuple unpacking](#252-tuple-unpacking)
       - [2.5.3. Extended iterable tuple unpacking (only in Python3)](#253-extended-iterable-tuple-unpacking-only-in-python3)
     - [2.6. Overwriting builtin names](#26-overwriting-builtin-names)
-    - [2.7. Function locals and Scopes](#27-function-locals-and-scopes)
+    - [2.7. Function locals, Scopes, and Name lookups](#27-function-locals-scopes-and-name-lookups)
+    - [2.8. The Built-in namespace, `locals()`, and `globals()`](#28-the-built-in-namespace-locals-and-globals)
+    - [2.9. The `import` statement](#29-the-import-statement)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
