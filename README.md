@@ -279,8 +279,6 @@ Out[38]: (bool, int, object)
 
 ### 1.6. Callables
 
-_Read more on Callables at [https://arvimal.blog/2017/08/09/callables-in-python/](https://arvimal.blog/2017/08/09/callables-in-python/)_
-
 Instance objects are not callable, only functions, classes, or methods are callable.
 
 This means, the function/method/class or any object can be executed and returns a value (can be `False` as well)
@@ -310,6 +308,8 @@ In [166]: def myfunc():
 In [167]: callable(myfunc)
 Out[167]: True
 ```
+
+**NOTE:** Read more on Callables in my Blog article [Callables in Python](https://arvimal.blog/2017/08/09/callables-in-python/)
 
 ***
 
