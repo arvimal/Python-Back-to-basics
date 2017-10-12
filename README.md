@@ -273,6 +273,8 @@ In [38]: inspect.getmro(bool)
 Out[38]: (bool, int, object)
 ```
 
+**NOTE:** Also read my Blog article on [Method Resolution Order - Object Oriented Programming](https://arvimal.blog/2016/05/30/method-resolution-order-object-oriented-programming/)
+
 ***
 
 ### 1.6. Callables
