@@ -25,6 +25,10 @@
     - [2.7. Function locals, Scopes, and Name lookups](#27-function-locals-scopes-and-name-lookups)
     - [2.8. The Built-in namespace, `locals()`, and `globals()`](#28-the-built-in-namespace-locals-and-globals)
     - [2.9. The `import` statement](#29-the-import-statement)
+      - [2.9.1. How does `import` work?](#291-how-does-import-work)
+    - [2.10. Assigning custom attributes to a name](#210-assigning-custom-attributes-to-a-name)
+    - [2.11. The `importlib` module](#211-the-importlib-module)
+    - [2.12. Functions and Namespaces](#212-functions-and-namespaces)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
