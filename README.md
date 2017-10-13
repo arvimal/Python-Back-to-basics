@@ -21,6 +21,7 @@
       - [2.5.1. Direct assignment](#251-direct-assignment)
       - [2.5.2. Tuple unpacking](#252-tuple-unpacking)
       - [2.5.3. Extended iterable tuple unpacking (only in Python3)](#253-extended-iterable-tuple-unpacking-only-in-python3)
+      - [2.5.4. Importing modules](#254-importing-modules)
     - [2.6. Overwriting builtin names](#26-overwriting-builtin-names)
     - [2.7. Function locals, Scopes, and Name lookups](#27-function-locals-scopes-and-name-lookups)
     - [2.8. The Built-in namespace, `locals()`, and `globals()`](#28-the-built-in-namespace-locals-and-globals)
@@ -806,6 +807,14 @@ Out[68]: []
 In [69]: a, b, c
 Out[69]: ('H', [], 'i')
 ```
+
+#### 2.5.4. Importing modules
+
+Importing modules is another way to get names into the namespace. 
+
+The modules could be either part of the standard library, or custom modules written by the developer.
+
+To know more on how `import` works, please refer [Section 2.9](#2.9. The import statement)
 
 ***
 
