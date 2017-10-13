@@ -71,7 +71,7 @@ Object attributes are inherited from the class from which it was instantiated, t
 
 To list the methods available for an object, use the `dir()` function on the object.
 
-```python3
+```python
 In [36]: dir(a)
 Out[36]:
 ['__abs__',
@@ -90,7 +90,7 @@ Out[36]:
 
 For example,
 
-```python3
+```python
 In [14]: type(1)
 Out[14]: int
 
@@ -134,7 +134,7 @@ When the python interpreter calls the `type()` function on a variable or a built
 
 * Calling type(`something`) internally calls `something.__class__`.
 
-```python3
+```python
 In [1]: type(1)
 Out[1]: int
 
@@ -178,7 +178,7 @@ Out[21]: (int, object)
 
 * The actual way to get the Method Resolution Order, is to use the `inspect` module
 
-```python3
+```python
 In [33]: import inspect
 
 In [34]: inspect.getmro(int)
@@ -206,7 +206,7 @@ This allows to probe the `type` and other internals such as the MRO.
 
 * Example 1:
 
-```python3
+```python
 In [98]: True.__mro__
 ---------------------------------------------------------------------------
 AttributeError                            Traceback (most recent call last)
@@ -239,7 +239,7 @@ If we use `True.__class__.__bases__`, the python interpreter will show the base 
 
 * Example 2:
 
-```python3
+```python
 In [128]: j = 2
 
 In [129]: type(j)
@@ -270,7 +270,7 @@ Out[132]: (object,)
 
 The same information can be pulled using the `getmro()` method in the `inspect` module.
 
-```python3
+```python
 In [37]: type(bool)
 Out[37]: type
 
@@ -288,7 +288,7 @@ Instance objects are not callable, only functions, classes, or methods are calla
 
 This means, the function/method/class or any object can be executed and returns a value (can be `False` as well)
 
-```python3
+```python
 In [160]: x = int(1212.3)
 
 In [161]: y = "Hello"
@@ -322,7 +322,7 @@ Out[167]: True
 
 Object size in memory can be parsed using the `getsizeof` method from the `sys` module
 
-```python3
+```python
 In [174]: import sys
 
 In [175]: sys.getsizeof("Hello")
@@ -334,7 +334,7 @@ Out[176]: 32
 
 The help on `sys` shows:
 
-```python3
+```python
 In [42]: help(sys.getsizeof)
 
 Help on built-in function getsizeof in module sys:
@@ -376,7 +376,7 @@ A `dir()` function can list the names in the current namespace.
 
 * Example 1
 
-```python3
+```python
 In [46]: dir()
 Out[46]:
 ['In',
@@ -551,7 +551,7 @@ Objects get their attributes from the base type the object is instantiated from.
 
 Object attributes are similar to dictionaries, since the attributes of an object are names to methods within the object namespace.
 
-```python3
+```python
 In [19]: a = "test"
 
 In [20]: a.__class__
@@ -701,7 +701,7 @@ There are multiple ways to set a name for an object, in a namespace.
 
 #### 2.5.1. Direct assignment
 
-```python3
+```python
 In [42]: a = 1
 
 In [43]: b = a
@@ -730,7 +730,7 @@ RHS has to be iterable so that the assignment will work properly. The RHS can be
 * When all the names are called simultaneously, they are returned as a tuple.
 
 
-```python3
+```python
 In [48]: a, b, c = 10, 20, 30
 
 In [49]: a
@@ -756,7 +756,7 @@ The examples below are self-explanatory.
 
 * Example 1
 
-```python3
+```python
 In [54]: a, b, c, *d = "HelloWorld!"
 
 In [55]: a
@@ -774,7 +774,7 @@ Out[58]: ['l', 'o', 'W', 'o', 'r', 'l', 'd', '!']
 
 * Example 2:
 
-```python3
+```python
 In [59]: a, *b, c = "HelloWorld"
 
 In [60]: a
@@ -792,7 +792,7 @@ Out[64]: ('H', ['e', 'l', 'l', 'o', 'W', 'o', 'r', 'l'], 'd')
 
 * Example 3:
 
-```python3
+```python
 In [65]: a, *b, c = "Hi"
 
 In [66]: a
@@ -810,7 +810,7 @@ Out[69]: ('H', [], 'i')
 
 #### 2.5.4. Importing modules
 
-Importing modules is another way to get names into the namespace. 
+Importing modules is another way to get names into the namespace.
 
 The modules could be either part of the standard library, or custom modules written by the developer.
 
@@ -824,7 +824,7 @@ It is not a good practice to overwrite builtin names, since programs may start a
 
 For example, `len()` calls the dunder method `__len__()` on the object (provided the type supports `len()`), and returns the length. Imagine overwriting it with a custom value.
 
-```python3
+```python
 In [4]: a = "A"
 
 In [5]: len(a)
@@ -845,7 +845,7 @@ Fortunately, overwriting `len` only means that it hides the builtin with the cus
 
 Continuing from the previous assignments:
 
-```python3
+```python
 In [8]: del len
 
 In [9]: len(a)
@@ -879,7 +879,7 @@ Executing the function `outer()` can access the name `x`, even though `x` is out
 
 * Example 2 (Local scope):
 
-```python3
+```python
 In [24]: a = "Hello"
 
 In [25]: def local():
@@ -904,7 +904,7 @@ But, calling `a` prints `Hello`, since our local scope is outside the local scop
 
 Depending on where the name is and how it was referenced, the output may differ.
 
-```python3
+```python
 In [35]: a = "Hello"
 
 In [36]: def test():
@@ -937,7 +937,7 @@ In the example above, `a` was defined both within the local scope and outer scop
 
 We can enforce the reference to happen from the outer scope, using the `global()` keyword.
 
-```python3
+```python
 In [69]: a
 Out[69]: 'Hello'
 
@@ -971,7 +971,7 @@ This is similar to the `global` keyword, and gives access to names in outer scop
 As per the [Python3 documentation on `nonlocal`](https://docs.python.org/3/reference/simple_stmts.html#nonlocal):
 
 
-```python3
+```python
 <Example yet to be updated>
 ```
 
@@ -983,7 +983,7 @@ Ideally, the local and global scope are the same since the local scope contains 
 
 For example, the code below will print a different local scope altogether
 
-```python3
+```python
 In [38]: def hello():
     ...:     a = 100
     ...:     b = 1024
@@ -1011,7 +1011,7 @@ But the global scope is the one outside of the local scope of the function `hell
 
 The local and global scope are dictionaries, and the local/global namespace can be accessed through `locals()` and `globals()` builtins.
 
-```python3
+```python
 In [43]: a = 100
 
 In [44]: locals()['a']
@@ -1035,7 +1035,7 @@ The `import` statement allows us to bring in a set of features and functions int
 2. A module provides a set of features (collectively through one or more python source files)
 3. The `import` statement looks into a pre-defined set of paths, for the file name to be imported.
 
-```python3
+```python
 In [12]: import sys
 
 In [13]: sys.path
@@ -1057,7 +1057,7 @@ Out[13]:
 
 **NOTE:** The `del` builtin can be used to delete the name in the current namespace. As always, once the references are null, the objects in memory would be garbage collected.
 
-```python3
+```python
 In [14]: del sys
 
 In [15]: 'sys' in dir() # Checks the presence of the name in the current namespace
