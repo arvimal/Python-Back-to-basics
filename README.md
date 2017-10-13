@@ -189,7 +189,7 @@ Out[35]: (int, object)
 * Every object created is an instance of a class which is either inbuilt like `int` or a custom made class.
 * All classes whether custom or inbuilt, ultimately inherits from the `object` class.
 
--TODO-: Other than doing `import inspect; inspect.getmro(int)` how does `__mro__` gets executed when called as a magic method?
+-TODO-: Rather than `import inspect; inspect.getmro(int)`, how does `__mro__` gets executed when called as a magic method?
 
 ***
 
@@ -273,7 +273,7 @@ In [38]: inspect.getmro(bool)
 Out[38]: (bool, int, object)
 ```
 
-**NOTE:** Also read my Blog article on [Method Resolution Order - Object Oriented Programming](https://arvimal.blog/2016/05/30/method-resolution-order-object-oriented-programming/)
+**NOTE:** For more, read my Blog article on [Method Resolution Order - Object Oriented Programming](https://arvimal.blog/2016/05/30/method-resolution-order-object-oriented-programming/)
 
 ***
 
@@ -405,12 +405,14 @@ Some important points on Names:
 4. Deleting a name just removes the reference in the current namespace to the object in memory.
 5. When all references (names) are removed from the namespace that refers a specific object, the object is garbage collected.
 6. It's not names (variables) that have types but objects, since objects are actually instances of specific classes (int, str, float etc..)
-7. Due to `**6**`, the same name which was referring to an int can be assigned to a str object
+7. Due to point `**6**`, the same name which was referring to an int can be assigned to a str object
 
-* What happens when `a = 10` in a python REPL prompt?
+* What happens when `a = 10` is set at a python REPL prompt?
 
-1. The python interpreter creates an object in memory which is an instance of `class int`.
-2. It then creates a name called `a` which is a pointer to the object instance.
+1. The python interpreter tries to understand the type of RHS value.
+2. It creates a new object in memory by instantiating an existing type, such as `int()`, `class()`, `float()`, etc.
+3. The interpreter then goes ahead to create a name which was set on the LHS part, in the current namespace. `a` in this example.
+4. The name acts as a pointer to the newly created object in memory.
 
 * Example 1
 
@@ -585,7 +587,7 @@ In Python v3.3, the `types` module include a class named `SimpleNamespace` which
 from types import SimpleNamespace
 ```
 
-* In Python v2, it's equivalent to the following code, ie.. creating a Class and setting the attributes
+* In Python v2, it's equivalent to the following custom class, ie.. create a Class and set the attributes manually.
 
 ```python
 class SimpleNamespace(object):
@@ -681,6 +683,8 @@ Out[2]:
  (18, 42),
  (19, 45)]
 ```
+
+The left side value in the tuple shows the int, while the right side shows the number of references to it.
 
 ***
 
@@ -839,8 +843,6 @@ Out[9]: 1
 
 ### 2.7. Function locals, Scopes, and Name lookups
 
-_Refer more on Scopes and related stuff at [Python3 Programming FAQs](https://docs.python.org/3/faq/programming.html#why-am-i-getting-an-unboundlocalerror-when-the-variable-has-a-value)_
-
 As said earlier, there are different scopes, depending on where the call is made. Inner and Outer scopes.
 
 * Example 1 (Outer scope):
@@ -916,7 +918,7 @@ In [38]: a
 Out[38]: 'Hello'
 ```
 
-In the example above, `a` was defined both within the local scope and outer scope. But the function call errored out with an `UnboundLocalError` since the name was defined after the reference.
+In the example above, `a` was defined both within the local scope and outer scope. But the function call errored out with an `UnboundLocalError` since the first lookup happens in the local scope, but it was defined after the reference.
 
 * Example 4: (Enforced access of outer scope, and overcoming `UnboundLocalError`)
 
@@ -945,7 +947,7 @@ Out[81]: 'Hi'
 ```
 
 **IMPORTANT:**
->Due to the use of the `global` keyword on `a`, the inner scope of `test()` was able to manipulate it.
+>Due to the use of the `global` keyword on `a`, the inner scope of `test()` was able to manipulate the name.
 >Hence, setting `a = "Hi"` within the local scope of `test()` changes the value of `a` in the outer scope.
 >This can be proven by calling `a` outside the scope of `test()`.
 
@@ -957,7 +959,7 @@ As per the [Python3 documentation on `nonlocal`](https://docs.python.org/3/refer
 
 
 ```python3
-
+<Example yet to be updated>
 ```
 
 ### 2.8. The Built-in namespace, `locals()`, and `globals()`
@@ -1014,7 +1016,44 @@ Even though the names within a scope can be accessed as such, it's not suggested
 
 The `import` statement allows us to bring in a set of features and functions into the current namespace.
 
-* How does `import` work?
+#### 2.9.1. How does `import` work?
 
-1. A module (a library which provides features) is called into the local namespace using `import <module_name>`.
-2. The python interpreter loads the
+1. A `import` statement helps to bring in a module into the current namespace.
+2. A module provides a set of features (collectively through one or more python source files)
+3. The `import` statement looks into a pre-defined set of paths, for the file name to be imported.
+
+```python3
+In [12]: import sys
+
+In [13]: sys.path
+Out[13]:
+['',
+ '/usr/bin',
+ '/usr/lib64/python36.zip',
+ '/usr/lib64/python3.6',
+ '/usr/lib64/python3.6/lib-dynload',
+ '/usr/lib64/python3.6/site-packages',
+ '/usr/lib/python3.6/site-packages',
+ '/usr/lib/python3.6/site-packages/IPython/extensions',
+ '/home/vimal/.ipython']
+```
+
+4. Upon finding the module in any of the paths, the python interpreter loads it into memory and create an object.
+5. It creates a name in the current namespace which points to the object in memory.
+6. The name in the current namespace can be used to access the available methods.
+
+**NOTE:** The `del` builtin can be used to delete the name in the current namespace. As always, once the references are null, the objects in memory would be garbage collected.
+
+```python3
+In [14]: del sys
+
+In [15]: 'sys' in dir() # Checks the presence of the name in the current namespace
+Out[15]: False
+```
+
+### 2.10. Assigning custom attributes to a name
+
+### 2.11. The `importlib` module
+
+### 2.12. Functions and Namespaces
+
