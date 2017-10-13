@@ -1051,9 +1051,9 @@ Out[13]:
  '/home/vimal/.ipython']
 ```
 
-4. Upon finding the module in any of the paths, the python interpreter loads it into memory and create an object.
-5. It creates a name in the current namespace which points to the object in memory.
-6. The name in the current namespace can be used to access the available methods.
+4. Upon finding the module in any of the paths, the python interpreter loads it into memory and create an object. It stops at the first occurrence of the module.=
+5. The interpreter creates a name in the current namespace which points to the object in memory.
+6. The name in the current namespace can be used to access the object's available methods.
 
 **NOTE:** The `del` builtin can be used to delete the name in the current namespace. As always, once the references are null, the objects in memory would be garbage collected.
 
@@ -1069,4 +1069,93 @@ Out[15]: False
 ### 2.11. The `importlib` module
 
 ### 2.12. Functions and Namespaces
+
+Creating a function creates a name in the current namespace. Listing the current namespace, lists the new name.
+
+```python
+In [3]: def func1():
+   ...:     pass
+   ...:
+
+In [4]: dir()
+Out[4]:
+['In',
+ 'Out',
+ '_',
+ '_2',
+ '__',
+ '___',
+ '__builtin__',
+ '__builtins__',
+..
+....
+ 'exit',
+ 'func1',
+....]
+```
+
+The interpreter follows the same steps it does for creating any other objects, such as `int()`, `float()` etc. Here, the object type is a function.
+
+```python
+In [7]: type(func1)
+Out[7]: function
+```
+
+The function object has attributes of its own within its scope.
+
+```python
+In [6]: dir(func1)
+Out[6]:
+['__annotations__',
+ '__call__',
+ '__class__',
+ '__closure__',
+ '__code__',
+ '__defaults__',
+ '__delattr__',
+ '__dict__',
+ '__dir__',
+ '__doc__',
+ '__eq__',
+ '__format__',
+ '__ge__',
+ '__get__',
+..
+....
+```
+
+It is possible to assign custom attributes to the function's scope as well. Please refer [Section 2.7](https://github.com/arvimal/Python-Back-to-basics#27-function-locals-scopes-and-name-lookups) for more details on how to do this, and Scopes.
+
+**NOTE:** While creating a function object, the name assigned to it goes to the current namespace, as well as the object's local scope.
+
+```python
+In [9]: func1
+Out[9]: <function __main__.func1>
+
+In [10]: func1.__name__
+Out[10]: 'func1'
+```
+
+As with any other function objects, many of the attributes can be changed. This is applicable to the `__name__` attribute as well.
+
+```python
+In [9]: func1
+Out[9]: <function __main__.func1>
+
+In [10]: func1.__name__
+Out[10]: 'func1'
+
+In [11]: func1.__name__ = "func2"
+
+In [12]: func1.__name__
+Out[12]: 'func2'
+
+In [13]: func2
+---------------------------------------------------------------------------
+NameError                                 Traceback (most recent call last)
+<ipython-input-13-c452357c830a> in <module>()
+----> 1 func2
+
+NameError: name 'func2' is not defined
+```
 
