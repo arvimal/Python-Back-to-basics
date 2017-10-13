@@ -814,7 +814,7 @@ Importing modules is another way to get names into the namespace.
 
 The modules could be either part of the standard library, or custom modules written by the developer.
 
-To know more on how `import` works, please refer [Section 2.9](#2.9. The import statement)
+To know more on how `import` works, please refer [Section 2.9](https://github.com/arvimal/Python-Back-to-basics#29-the-import-statement)
 
 ***
 
