@@ -132,7 +132,7 @@ When the python interpreter calls the `type()` function on a variable or a built
 
 **NOTE:**
 
-* Calling type(`something`) internally calls `something.__class__`.
+* Calling `type(object_name)` internally calls `object_name.__class__`.
 
 ```python
 In [1]: type(1)
@@ -278,13 +278,13 @@ In [38]: inspect.getmro(bool)
 Out[38]: (bool, int, object)
 ```
 
-**NOTE:** For more, read my Blog article on [Method Resolution Order - Object Oriented Programming](https://arvimal.blog/2016/05/30/method-resolution-order-object-oriented-programming/)
+**NOTE:** For more on MRO, please go through the blog article [Method Resolution Order - Object Oriented Programming](https://arvimal.blog/2016/05/30/method-resolution-order-object-oriented-programming/)
 
 ***
 
 ### 1.6. Callables
 
-Instance objects are not callable, only functions, classes, or methods are callable.
+Instance objects are not callable. Only functions, classes, or methods are callable.
 
 This means, the function/method/class or any object can be executed and returns a value (can be `False` as well)
 
@@ -314,7 +314,7 @@ In [167]: callable(myfunc)
 Out[167]: True
 ```
 
-**NOTE:** Read more on Callables in my Blog article [Callables in Python](https://arvimal.blog/2017/08/09/callables-in-python/)
+**NOTE:** Read more on Callables in the blog article [Callables in Python](https://arvimal.blog/2017/08/09/callables-in-python/)
 
 ***
 
@@ -584,7 +584,7 @@ Out[21]:
 
 #### 2.3.1. Creating a custom namespace
 
-Creating a custom name-space can help in understanding the concept better.
+Creating a custom name-space can help in understanding the concept of namespaces better.
 
 In Python v3.3, the `types` module include a class named `SimpleNamespace` which provides a clean namespace to play with.
 
@@ -599,7 +599,7 @@ class SimpleNamespace(object):
     pass
 ```
 
-* New methods can be assigned in this namespace without overriding any existing ones.
+* New methods can be assigned in the new namespace without overriding any existing ones.
 
 ```python
 In [64]: from types import SimpleNamespace
