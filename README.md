@@ -8,9 +8,9 @@
     - [1.2. Objects and Attributes](#12-objects-and-attributes)
     - [1.3. Types with `type()`](#13-types-with-type)
     - [1.4. Method Resolution Order [MRO]](#14-method-resolution-order-mro)
-    - [1.5. Inheritance, and Method Resolution Order](#15-inheritance-and-method-resolution-order)
-    - [1.6. Callables](#16-callables)
-    - [1.7. Object size](#17-object-size)
+      - [1.4.1. Inheritance, and Method Resolution Order](#141-inheritance-and-method-resolution-order)
+    - [1.5. Callables](#15-callables)
+    - [1.6. Object size](#16-object-size)
   - [2. Names and Namespaces](#2-names-and-namespaces)
     - [2.1. Names and Namespaces](#21-names-and-namespaces)
     - [2.2. `id()`, `is` and `==`](#22-id-is-and-)
@@ -41,14 +41,14 @@
 
 ### 1.1. Everything in Python is an object.
 
-Anything that is created by Python, is an instance of a inbuilt type.
+All initializations (variables, functions, classes, and other instances) done in Python  are simply names in the current namespace, that points to an object (a blob with some metadata) in memory.
 
-The newly created variable is a reference in the current namespace, to an object (a blob with some metadata) in memory.
+For example, if a new variable is created, it just points to an object in memory. 
 
-Hence if a new variable is created, for example `v = 1`, the following happens:
+Assigning a variable `v = 1` at the python REPL (Read Eval Print Loop) prompt triggers the following:
 
-1. The Python interpreter finds the appropriate in-built data type that can represent the data input. ie.. int(), float(), a function, class() etc..
-2. An instance of the appropriate type class is spawned in memory, which has a specific ID, and is assigned the value.
+1. The REPL reads the assignment statement, and finds the appropriate in-built data type that can represent the data input. ie.. int(), float(), a function, class() etc.
+2. An instance of the appropriate type class is spawned in memory, which has a specific ID, and is assigned the value. In this example, the REPL finds the type to be `int` and hence a new instance of the class `int()` is instantiated.
 3. The instance inherits the attributes of the type class.
 4. A pointer is created in the current namespace with the name `v`, that points to the instance in memory.
 
@@ -87,6 +87,8 @@ Out[36]:
 ***
 
 ### 1.3. Types with `type()`
+
+The `type()` builtin function, finds and returns the type of an object.
 
 For example,
 
@@ -188,17 +190,15 @@ In [35]: inspect.getmro(type(a))
 Out[35]: (int, object)
 ```
 
-**NOTE**
+**Observations:**
 
 * Every object has one or more base classes.
 * Every object created is an instance of a class which is either inbuilt like `int` or a custom made class.
 * All classes whether custom or inbuilt, ultimately inherits from the `object` class.
 
--TODO-: Rather than `import inspect; inspect.getmro(int)`, how does `__mro__` gets executed when called as a magic method?
-
 ***
 
-### 1.5. Inheritance, and Method Resolution Order
+#### 1.4.1. Inheritance, and Method Resolution Order
 
 The `__class__` method is implemented for almost all the type classes which inherits from the `object` class.
 
@@ -282,7 +282,7 @@ Out[38]: (bool, int, object)
 
 ***
 
-### 1.6. Callables
+### 1.5. Callables
 
 Instance objects are not callable. Only functions, classes, or methods are callable.
 
@@ -318,7 +318,7 @@ Out[167]: True
 
 ***
 
-### 1.7. Object size
+### 1.6. Object size
 
 Object size in memory can be parsed using the `getsizeof` method from the `sys` module
 
