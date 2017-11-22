@@ -1068,6 +1068,8 @@ Out[15]: False
 
 ### 2.11. The `importlib` module
 
+https://pymotw.com/3/importlib/
+
 ### 2.12. Functions and Namespaces
 
 Creating a function creates a name in the current namespace. Listing the current namespace, lists the new name.
