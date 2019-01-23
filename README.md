@@ -43,7 +43,7 @@
 
 All initializations (variables, functions, classes, and other instances) done in Python  are simply names in the current namespace, that points to an object (a blob with some metadata) in memory.
 
-For example, if a new variable is created, it just points to an object in memory. 
+For example, if a new variable is created, it just points to an object in memory.
 
 Assigning a variable `v = 1` at the python REPL (Read Eval Print Loop) prompt triggers the following:
 
@@ -1027,13 +1027,57 @@ Even though the names within a scope can be accessed as such, it's not suggested
 
 ### 2.9. The `import` statement
 
-The `import` statement allows us to bring in a set of features and functions into the current namespace.
+The `import` statement loads the content of a python module (a python source file at a pre-defined location) in memory.
 
+The methods defined in the module are thus available in the current namespace.
+
+* The `import` keyword is a wrapper around the builtin function `__import__`, defined in `__builtin__`.
+
+```python
+In [6]: dir(__builtin__)
+Out[6]:
+['ArithmeticError',
+ 'AssertionError',
+  ...
+  .....
+ '__doc__',
+ '__import__',
+ '__loader__',
+ ..
+ ...
+ 'vars',
+ 'zip']
+
+In [7]: print(__builtin__.__import__.__doc__)
+__import__(name, globals=None, locals=None, fromlist=(), level=0) -> module
+
+Import a module. Because this function is meant for use by the Python
+interpreter and not for general use, it is better to use
+importlib.import_module() to programmatically import a module.
+
+The globals argument is only used to determine the context;
+they are not modified.  The locals argument is unused.  The fromlist
+should be a list of names to emulate ``from name import ...'', or an
+empty list to emulate ``import name''.
+When importing a module from a package, note that __import__('A.B', ...)
+returns package A when fromlist is empty, but its submodule B when
+fromlist is not empty.  The level argument is used to determine whether to
+perform absolute or relative imports: 0 is absolute, while a positive number
+is the number of parent directories to search relative to the current module.
+
+ ```
+ 
 #### 2.9.1. How does `import` work?
 
+The `import` statement
+
+The steps can be summarized as:
+
 1. A `import` statement helps to bring in a module into the current namespace.
-2. A module provides a set of features (collectively through one or more python source files)
-3. The `import` statement looks into a pre-defined set of paths, for the file name to be imported.
+2. The `import` statement looks into a pre-defined set of paths, for the file name to be imported.
+3. This file/module is then loaded in memory, to the specific namespace.
+4. The methods defined in the module becomes available in the current namespace.
+
 
 ```python
 In [12]: import sys
@@ -1160,4 +1204,3 @@ NameError                                 Traceback (most recent call last)
 
 NameError: name 'func2' is not defined
 ```
-
