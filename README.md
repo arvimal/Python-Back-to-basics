@@ -359,11 +359,13 @@ getsizeof(...)
 
 4. A **_scope_** is a section where a namespace is directly accessible, for example, `dir()` shows the current namespace scope.
 
-5. Dot notations ('.') are used to access in-direct namespaces:
-    sys.version_info.major
-    p.x
-    "Hello".__add__(" World!")
+5. Dot notations ('.') are used to access in-direct namespaces. Some examples:
 
+```python
+    >>> sys.version_info.major
+    p.x
+    >>> "Hello".__add__(" World!")
+```
 6. It's better not to overwrite builtin names with custom ones, unless there is a strong reason to do so.
 
 **NOTE:**
