@@ -1,1208 +1,1311 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+---
+tags:
+  - python
+  - internals
+  - cpython
+---
 
-- [Python - Back to basics](#python---back-to-basics)
-  - [1. Python and Objects](#1-python-and-objects)
-    - [1.1. Everything in Python is an object.](#11-everything-in-python-is-an-object)
-    - [1.2. Objects and Attributes](#12-objects-and-attributes)
-    - [1.3. Types with `type()`](#13-types-with-type)
-    - [1.4. Method Resolution Order [MRO]](#14-method-resolution-order-mro)
-      - [1.4.1. Inheritance, and Method Resolution Order](#141-inheritance-and-method-resolution-order)
-    - [1.5. Callables](#15-callables)
-    - [1.6. Object size](#16-object-size)
-  - [2. Names and Namespaces](#2-names-and-namespaces)
-    - [2.1. Names and Namespaces](#21-names-and-namespaces)
-    - [2.2. `id()`, `is` and `==`](#22-id-is-and-)
-    - [2.3. Object Attributes and NameSpaces](#23-object-attributes-and-namespaces)
-      - [2.3.1. Creating a custom namespace](#231-creating-a-custom-namespace)
-    - [2.4. Object Reference count](#24-object-reference-count)
-    - [2.5. Various methods to set names in a namespace](#25-various-methods-to-set-names-in-a-namespace)
-      - [2.5.1. Direct assignment](#251-direct-assignment)
-      - [2.5.2. Tuple unpacking](#252-tuple-unpacking)
-      - [2.5.3. Extended iterable tuple unpacking (only in Python3)](#253-extended-iterable-tuple-unpacking-only-in-python3)
-      - [2.5.4. Importing modules](#254-importing-modules)
-    - [2.6. Overwriting builtin names](#26-overwriting-builtin-names)
-    - [2.7. Function locals, Scopes, and Name lookups](#27-function-locals-scopes-and-name-lookups)
-    - [2.8. The Built-in namespace, `locals()`, and `globals()`](#28-the-built-in-namespace-locals-and-globals)
-    - [2.9. The `import` statement](#29-the-import-statement)
-      - [2.9.1. How does `import` work?](#291-how-does-import-work)
-    - [2.10. Assigning custom attributes to a name](#210-assigning-custom-attributes-to-a-name)
-    - [2.11. The `importlib` module](#211-the-importlib-module)
-    - [2.12. Functions and Namespaces](#212-functions-and-namespaces)
+# Python Internals
 
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+A reference on how Python works under the hood — object model, namespaces, memory management, CPython implementation details, and the data model.
 
-# Python - Back to basics
+---
 
-***
+## Table of Contents
+
+- [Python and Objects](#1-python-and-objects)
+  - [Everything is an Object](#11-everything-in-python-is-an-object)
+  - [CPython: PyObject Under the Hood](#12-cpython-pyobject-under-the-hood)
+  - [Objects and Attributes](#13-objects-and-attributes)
+  - [Types and `type()`](#14-types-with-type)
+  - [Method Resolution Order (MRO)](#15-method-resolution-order-mro)
+  - [Callables](#16-callables)
+  - [Object Size](#17-object-size)
+- [Names and Namespaces](#2-names-and-namespaces)
+  - [Names and Namespaces](#21-names-and-namespaces)
+  - [`id()`, `is`, and `==`](#22-id-is-and-)
+  - [Object Attributes and Namespaces](#23-object-attributes-and-namespaces)
+  - [Custom Namespaces](#24-creating-a-custom-namespace)
+  - [Reference Counting](#25-object-reference-count)
+  - [Integer Caching and String Interning](#26-integer-caching-and-string-interning)
+  - [Ways to Set Names in a Namespace](#27-various-methods-to-set-names-in-a-namespace)
+  - [Overwriting Builtin Names](#28-overwriting-builtin-names)
+  - [Scopes and the LEGB Rule](#29-scopes-and-the-legb-rule)
+  - [`global` and `nonlocal`](#210-global-and-nonlocal)
+  - [`locals()` and `globals()`](#211-locals-and-globals)
+  - [The `import` Statement](#212-the-import-statement)
+  - [Functions and Namespaces](#213-functions-and-namespaces)
+- [Memory Management and Garbage Collection](#3-memory-management-and-garbage-collection)
+  - [Reference Counting in CPython](#31-reference-counting-in-cpython)
+  - [Cycle Detection](#32-cycle-detection)
+  - [Generational GC](#33-generational-garbage-collection)
+  - [Weak References](#34-weak-references)
+- [Bytecode and the CPython VM](#4-bytecode-and-the-cpython-vm)
+  - [Compilation Pipeline](#41-compilation-pipeline)
+  - [Inspecting Bytecode with `dis`](#42-inspecting-bytecode-with-dis)
+  - [Code Objects](#43-code-objects)
+  - [The GIL](#44-the-global-interpreter-lock-gil)
+- [The Descriptor Protocol](#5-the-descriptor-protocol)
+  - [How Attribute Lookup Works](#51-how-attribute-lookup-works)
+  - [Data vs Non-data Descriptors](#52-data-vs-non-data-descriptors)
+  - [`property` as a Descriptor](#53-property-as-a-descriptor)
+  - [`__slots__`](#54-__slots__)
+- [Metaclasses](#6-metaclasses)
+  - [`type` is the Metaclass of All Classes](#61-type-is-the-metaclass-of-all-classes)
+  - [`__new__` vs `__init__`](#62-__new__-vs-__init__)
+  - [Custom Metaclasses](#63-custom-metaclasses)
+
+---
 
 ## 1. Python and Objects
 
-### 1.1. Everything in Python is an object.
+### 1.1. Everything in Python is an Object
 
-All initializations (variables, functions, classes, and other instances) done in Python  are simply names in the current namespace, that points to an object (a blob with some metadata) in memory.
+All values in Python — integers, strings, functions, classes, modules — are objects in memory. A name (variable) is just a reference to an object; it is not the object itself.
 
-For example, if a new variable is created, it just points to an object in memory.
+When you write `v = 1` at the REPL:
 
-Assigning a variable `v = 1` at the python REPL (Read Eval Print Loop) prompt triggers the following:
-
-1. The REPL reads the assignment statement, and finds the appropriate in-built data type that can represent the data input. ie.. int(), float(), a function, class() etc.
-2. An instance of the appropriate type class is spawned in memory, which has a specific ID, and is assigned the value. In this example, the REPL finds the type to be `int` and hence a new instance of the class `int()` is instantiated.
-3. The instance inherits the attributes of the type class.
-4. A pointer is created in the current namespace with the name `v`, that points to the instance in memory.
-
-Thus, when creating a variable `v = 1`, `v` is a reference to the object in memory created by inheriting from the builtin `int` type.
+1. The interpreter determines the appropriate built-in type for the value (`int` here).
+2. An instance of that type is created in the heap — a block of memory with metadata and the value.
+3. The instance inherits attributes from its type class.
+4. A pointer named `v` is created in the current namespace, pointing to that object.
 
 Every object has:
 
-1. A single type (ie.. every object is an instance of an inbuilt type (class) like int, float etc.. (which is a class)
-2. A single value
-3. Attributes, mostly inherited from the builtin type
-4. One or more base classes (The object is an instance of a builtin class, hence it inherits from it as well)
-5. A single unique ID (Since an object is an instance of a class, it is a running copy in memory and has an id)
-6. One or more names, in one or more namespaces (The object created in memory has a reference to it in the namespace)
+| Property | Description |
+| --- | --- |
+| **Type** | The class it was instantiated from (`int`, `str`, a custom class, etc.) |
+| **Value** | The payload (e.g. `42`, `"hello"`) |
+| **Identity** | A unique integer ID for the lifetime of the object (`id()`) |
+| **Reference count** | How many names/containers currently point to it |
+| **Attributes** | Methods and data inherited from its type, plus any instance-specific data |
 
-***
+---
 
-### 1.2. Objects and Attributes
+### 1.2. CPython: PyObject Under the Hood
 
-Object attributes are inherited from the class from which it was instantiated, through classes in the MRO chain, as well as its parent classes.
+In CPython (the reference implementation), every Python object is represented by a C struct. The base struct is `PyObject`, defined in `Include/object.h`:
 
-To list the methods available for an object, use the `dir()` function on the object.
-
-```python
-In [36]: dir(a)
-Out[36]:
-['__abs__',
- '__add__',
- '__and__',
- '__bool__',
- '__ceil__',
-..
-....
-<omitted>
+```c
+typedef struct _object {
+    Py_ssize_t ob_refcnt;   /* reference count */
+    PyTypeObject *ob_type;  /* pointer to the type object */
+} PyObject;
 ```
 
-***
+For variable-length objects (lists, strings) there is a slightly extended variant:
 
-### 1.3. Types with `type()`
-
-The `type()` builtin function, finds and returns the type of an object.
-
-For example,
-
-```python
-In [14]: type(1)
-Out[14]: int
-
-In [15]: type(int)
-Out[15]: type
-
-In [16]: help(int)
-Help on class int in module builtins:
-
-class int(object)
- |  int(x=0) -> integer
- |  int(x, base=10) -> integer
- |
- |  Convert a number or string to an integer, or return 0 if no arguments
- |  are given.  If x is a number, return x.__int__().  For floating point
- |  numbers, this truncates towards zero.
- |
- |  If x is not a number or if base is given, then x must be a string,
- |  bytes, or bytearray instance representing an integer literal in the
- |  given base.  The literal can be preceded by '+' or '-' and be surrounded
- |  by whitespace.  The base defaults to 10.  Valid bases are 0 and 2-36.
- |  Base 0 means to interpret the base from the string as an integer literal.
- |  >>> int('0b100', base=0)
- |  4
+```c
+typedef struct {
+    PyObject ob_base;
+    Py_ssize_t ob_size;   /* number of items in the collection */
+} PyVarObject;
 ```
 
-When the python interpreter calls the `type()` function on a variable or a builtin, it does the following:
+Key points:
 
-1. The `type()` function follows the variable name or builtin name to the actual object in memory.
-2. It reads the object metadata and calls the magic method `__class__` on it.
-3. This prints the type of the class from which the object was created, which is of course, the class of the object as well.
+- `ob_refcnt` drives the **reference counting** garbage collector. Every time a reference is added (assignment, passing to a function, appending to a list), `ob_refcnt` is incremented. When a reference is dropped, it is decremented. When it hits zero, the object is deallocated immediately.
+- `ob_type` is a pointer to a `PyTypeObject` struct that describes the type — its name, its size, its slots for `__add__`, `__repr__`, `__hash__`, etc. When you call a method on an object, CPython follows `ob_type` to find the implementation.
+- `id(obj)` returns the memory address of the underlying `PyObject` (on CPython). It is unique only for the lifetime of the object.
 
-> In the example above, the integer `1` is an instance of the inbuilt type `int`.
+The implication: **there is no "primitive" in Python**. Even the integer `1` is a heap-allocated `PyLongObject` with a refcount and a type pointer. This is why Python is slower than C for arithmetic — every operation involves pointer dereferences.
 
-**IMPORTANT**
+---
 
-1. Every object that is created by Python is an instance of an inbuilt type.
-2. Every type inherits from another type which ultimately ends by inheriting from the `object` type.
+### 1.3. Objects and Attributes
 
-**NOTE:**
-
-* Calling `type(object_name)` internally calls `object_name.__class__`.
+Object attributes are inherited from the class that instantiated the object. They live in the namespace established by that class (and its MRO).
 
 ```python
-In [1]: type(1)
-Out[1]: int
-
-In [2]: (1).__class__
-Out[2]: int
+a = "test"
+type(a)       # str
+a.__class__   # str
+dir(a)        # lists all attributes: __add__, __contains__, upper, lower, ...
 ```
 
-* If you call `type()` on an inbuilt such as `int`,  it returns `type` which means it's a base type.
+Attributes are stored in a dictionary (`__dict__`) for most objects. Calling `a.upper()` is roughly equivalent to `type(a).__dict__['upper'].__get__(a, type(a))()` — an attribute lookup that goes through the descriptor protocol (see [Section 5](#5-the-descriptor-protocol)).
 
-***
+---
 
-### 1.4. Method Resolution Order [MRO]
+### 1.4. Types with `type()`
 
-`Method Resolution Order` is the order in which a method is resolved.
-
-When a method is called on an object, it first looks up in the inherited methods (from the class from which the object was instantiated), and if not found, moves to its parent class.
-
-Hence, an integer object will first look for the methods under the `int()` class, and then the parent class of `int()`, ie.. object().
-
-**Code example**:
+`type()` returns the type of an object. Internally it reads `ob_type` from the `PyObject` struct.
 
 ```python
-In [18]: a = 1
-
-In [19]: a
-Out[19]: 1
-
-In [20]: a.__mro__
----------------------------------------------------------------------------
-AttributeError                            Traceback (most recent call last)
-<ipython-input-20-bc8e99ec9963> in <module>()
-----> 1 a.__mro__
-
-AttributeError: 'int' object has no attribute '__mro__'
-
-In [21]: int.__mro__
-Out[21]: (int, object)
+type(1)       # int
+type(int)     # type
+type(type)    # type   ← type is its own metaclass
 ```
 
-* `a.__mro__` will fail, since the `__mro__` method is not available on objects or its parent class.
-
-* The actual way to get the Method Resolution Order, is to use the `inspect` module
+`type()` is also a constructor for creating new types dynamically:
 
 ```python
-In [33]: import inspect
-
-In [34]: inspect.getmro(int)
-Out[34]: (int, object)
-
-In [35]: inspect.getmro(type(a))
-Out[35]: (int, object)
+# type(name, bases, dict) creates a new class
+MyClass = type('MyClass', (object,), {'x': 42, 'greet': lambda self: 'hello'})
+MyClass().greet()   # 'hello'
 ```
 
-**Observations:**
+The chain ends here: `type(object)` is `type`, and `type(type)` is `type`.
 
-* Every object has one or more base classes.
-* Every object created is an instance of a class which is either inbuilt like `int` or a custom made class.
-* All classes whether custom or inbuilt, ultimately inherits from the `object` class.
-
-***
-
-#### 1.4.1. Inheritance, and Method Resolution Order
-
-The `__class__` method is implemented for almost all the type classes which inherits from the `object` class.
-
-This allows to probe the `type` and other internals such as the MRO.
-
-* Example 1:
+```text
+int       → type      → type  (metaclass of all classes)
+object    → type
+type      → type
+```
 
 ```python
-In [98]: True.__mro__
----------------------------------------------------------------------------
-AttributeError                            Traceback (most recent call last)
-<ipython-input-99-89beb515a8b6> in <module>()
-----> 1 True.__mro__
-
-In [99]: type(True)
-Out[99]: bool
-
-In [100]: True.__class__
-Out[100]: bool
-
-In [101]: True.__class__.__bases__
-Out[101]: (int,)
-
-In [102]: True.__class__.__bases__[0]
-Out[102]: int
-
-In [103]: True.__class__.__bases__[0].__bases__
-Out[103]: (object,)
+# Equivalent: calling type() reads __class__
+type(1)       # int
+(1).__class__ # int
 ```
 
-To understand the inheritance, we try checking the type or the inbuilt `True` condition. We find that `True.__mro__` does not exist. This is because it's an instance of another class.
+---
 
-To find it, we can use either `type()` or `True.__class__`. This will print the class that it inherits from. Here, it's the class `bool`.
+### 1.5. Method Resolution Order (MRO)
 
-If we use `True.__class__.__bases__`, the python interpreter will show the base class of the class the instance is inheriting from, which is `int` here. Hence `True` is an instance of `bool`, and `bool` inherits from `int`.
+MRO is the order in which Python searches for a method or attribute when looking it up on an object.
 
-`True.__class__.bases__[0].__bases__` should print the base class of `int`, ie.. the `object` class.
+CPython uses the **C3 linearization** algorithm (since Python 2.3). For single inheritance it is trivial; for multiple inheritance it ensures:
 
-* Example 2:
+- A class always comes before its parents.
+- The relative order of parent classes is preserved.
+- The MRO is consistent (no class appears twice).
 
 ```python
-In [128]: j = 2
+import inspect
 
-In [129]: type(j)
-Out[129]: int
+inspect.getmro(bool)   # (bool, int, object)
+inspect.getmro(int)    # (int, object)
 
-In [130]: j.__class__
-Out[130]: int
+# For a more complex case
+class A: pass
+class B(A): pass
+class C(A): pass
+class D(B, C): pass
 
-In [131]: j.__class__.__base <TAB>
-j.__class__.__base__   j.__class__.__bases__
-
-In [131]: j.__class__.__base__
-Out[131]: object
-
-In [132]: j.__class__.__bases__
-Out[132]: (object,)
+D.__mro__
+# (<class 'D'>, <class 'B'>, <class 'C'>, <class 'A'>, <class 'object'>)
 ```
 
-1. Define a variable `j` with a value `2, which creates an instance of the `int` class.
-2. Confirm this using `type()` or `instance.__class__`.
-3. Inspect the base class of `j` using `j.__class__.__base__` or `j.__class__.__bases__`
-
-`j.__class__.__base__` will show a single parent class, while `j.__class__.__bases__` shows if there are multiple parent classes.
-
-**NOTE:**
-* Hence, `j` is an instance of class `int`, and it inherits from class `object`.
-* Probing for the base class of `object` won't print anything since `object` is the ultimate base class.
-
-The same information can be pulled using the `getmro()` method in the `inspect` module.
+`__mro__` is available on **classes**, not instances:
 
 ```python
-In [37]: type(bool)
-Out[37]: type
-
-In [38]: inspect.getmro(bool)
-Out[38]: (bool, int, object)
+a = 1
+a.__mro__       # AttributeError: 'int' object has no attribute '__mro__'
+int.__mro__     # (int, object)
+type(a).__mro__ # (int, object)
 ```
 
-**NOTE:** For more on MRO, please go through the blog article [Method Resolution Order - Object Oriented Programming](https://arvimal.blog/2016/05/30/method-resolution-order-object-oriented-programming/)
-
-***
-
-### 1.5. Callables
-
-Instance objects are not callable. Only functions, classes, or methods are callable.
-
-This means, the function/method/class or any object can be executed and returns a value (can be `False` as well)
+**MRO and inheritance walkthrough:**
 
 ```python
-In [160]: x = int(1212.3)
-
-In [161]: y = "Hello"
-
-In [162]: callable(x)
-Out[162]: False
-
-In [163]: callable(y)
-Out[163]: False
-
-In [164]: class MyClass(object):
-   .....:     pass
-   .....:
-
-In [165]: callable(MyClass)
-Out[165]: True
-
-In [166]: def myfunc():
-   .....:     pass
-   .....:
-
-In [167]: callable(myfunc)
-Out[167]: True
+True.__class__                    # bool
+True.__class__.__bases__          # (int,)   ← bool inherits from int
+True.__class__.__bases__[0]       # int
+True.__class__.__bases__[0].__bases__  # (object,)
 ```
 
-**NOTE:** Read more on Callables in the blog article [Callables in Python](https://arvimal.blog/2017/08/09/callables-in-python/)
+All inheritance chains ultimately end at `object`. Calling `object.__bases__` returns `()` — the empty tuple.
 
-***
+---
 
-### 1.6. Object size
+### 1.6. Callables
 
-Object size in memory can be parsed using the `getsizeof` method from the `sys` module
+An object is callable if calling it (`obj()`) makes sense — i.e., it implements `__call__`. The built-in `callable()` checks for this.
 
 ```python
-In [174]: import sys
+x = int(1212.3)
+callable(x)          # False — int instances are not callable
 
-In [175]: sys.getsizeof("Hello")
-Out[175]: 54
+callable(int)        # True  — the int class itself is callable (creates instances)
+callable(len)        # True  — built-in function
+callable(lambda: 1)  # True  — lambda
 
-In [176]: sys.getsizeof(2**30 + 1)
-Out[176]: 32
+class MyClass:
+    pass
+
+callable(MyClass)    # True — classes are callable
+
+class WithCall:
+    def __call__(self):
+        return 42
+
+obj = WithCall()
+callable(obj)        # True — instance with __call__
+obj()                # 42
 ```
 
-The help on `sys` shows:
+Any class that defines `__call__` produces callable instances. This is how decorators implemented as classes work.
+
+---
+
+### 1.7. Object Size
+
+`sys.getsizeof()` returns the size of an object in bytes — specifically, the size of the object itself, **not** the objects it refers to.
 
 ```python
-In [42]: help(sys.getsizeof)
+import sys
 
-Help on built-in function getsizeof in module sys:
-
-getsizeof(...)
-    getsizeof(object, default) -> int
-
-    Return the size of object in bytes.
+sys.getsizeof(1)           # 28   — small int in CPython
+sys.getsizeof(2**100)      # 40   — bignum uses more words
+sys.getsizeof("hello")     # 54   — base string overhead + 5 chars
+sys.getsizeof([])          # 56   — empty list
+sys.getsizeof([1, 2, 3])   # 88   — list with 3 references (not the ints themselves)
+sys.getsizeof({})          # 64   — empty dict
 ```
 
-***
+For containers, use `tracemalloc` or `pympler.asizeof()` to get the total recursive size including referenced objects.
+
+```python
+import tracemalloc
+tracemalloc.start()
+x = [list(range(1000)) for _ in range(100)]
+snapshot = tracemalloc.take_snapshot()
+for stat in snapshot.statistics('lineno')[:3]:
+    print(stat)
+```
+
+---
 
 ## 2. Names and Namespaces
 
 ### 2.1. Names and Namespaces
 
-1. A Name is a mapping to a value, ie.. a reference to objects in memory.
+A **name** (variable) is a reference to an object in memory — a label, not a container. The same object can have multiple names; the same name cannot point to multiple objects simultaneously.
 
-2. A Namespace is similar to a dictionary, ie.. it is a set of valid identifier names to object references.
+A **namespace** is a mapping of names to object references — conceptually a dictionary. Different namespaces are isolated from each other: two namespaces can have a name `x` pointing to different objects.
 
-3. Operations such as assignment (=), renaming, and `del` are all namespace operations.
+A **scope** is the region of code where a namespace is directly accessible without dot notation.
 
-4. A **_scope_** is a section where a namespace is directly accessible, for example, `dir()` shows the current namespace scope.
+Key points:
 
-5. Dot notations ('.') are used to access in-direct namespaces. Some examples:
-
-```python
-    >>> sys.version_info.major
-    p.x
-    >>> "Hello".__add__(" World!")
-```
-6. It's better not to overwrite builtin names with custom ones, unless there is a strong reason to do so.
-
-**NOTE:**
->A Namespace cannot carry more than one similar name.
->As an example, multiple variables named `a` cannot exist in a namespace.
-
-_Read more on Python Namespaces at [Python3 Classes documentation](https://docs.python.org/3/tutorial/classes.html#python-scopes-and-namespaces)_
-
-A `dir()` function can list the names in the current namespace.
-
-* Example 1
+1. Assignment (`=`), `del`, and `import` are namespace operations — they modify the name-to-object mapping, not the objects themselves.
+2. Objects do not have types; names do not have types. **Objects** have types.
+3. A name that refers to an `int` today can refer to a `str` tomorrow — the name has no type constraint.
+4. Deleting a name (`del x`) removes the mapping entry; it does not destroy the object. The object is destroyed only when its reference count reaches zero.
+5. Dot notation (`.`) accesses a sub-namespace: `sys.version` means "look up `version` in the namespace of the object `sys`."
 
 ```python
-In [46]: dir()
-Out[46]:
-['In',
- 'Out',
- '_',
- '_1',
- '_11',
- '_14',
- '_19',
- '_2',
- '_21',
- '_26',
-...
-....
- '_iii',
- '_oh',
- '_sh',
- 'a',
- 'exit',
- 'get_ipython',
- 'inspect',
- 'quit',
- 'sys']
+a = 300    # create int object 300, bind name 'a' to it
+b = a      # bind name 'b' to the SAME object (not a copy)
+id(a) == id(b)  # True — same object
+
+a = 400    # create new int object 400, rebind 'a' — 'b' still points to 300
+id(a) == id(b)  # False — now different objects
+b          # 300
 ```
 
-Some important points on Names:
-
-1. A name assignment (Creating a variable), renaming, deleting etc.. are all namespace operations.
-2. Python uses names as a _reference to objects in memory_, and not like boxes containing a value.
-3. Variable names are actually labels which you can add (or remove) to an object.
-4. Deleting a name just removes the reference in the current namespace to the object in memory.
-5. When all references (names) are removed from the namespace that refers a specific object, the object is garbage collected.
-6. It's not names (variables) that have types but objects, since objects are actually instances of specific classes (int, str, float etc..)
-7. Due to point `**6**`, the same name which was referring to an int can be assigned to a str object
-
-* What happens when `a = 10` is set at a python REPL prompt?
-
-1. The python interpreter tries to understand the type of RHS value.
-2. It creates a new object in memory by instantiating an existing type, such as `int()`, `class()`, `float()`, etc.
-3. The interpreter then goes ahead to create a name which was set on the LHS part, in the current namespace. `a` in this example.
-4. The name acts as a pointer to the newly created object in memory.
-
-* Example 1
+`dir()` lists names in the current namespace scope:
 
 ```python
-In [7]: a = 300
-
-In [8]: a
-Out[8]: 300
-
-In [9]: a = 400
-
-In [10]: a
-Out[10]: 400
+x = 42
+dir()      # [..., 'x', ...]
 ```
 
-Explanation:
+---
 
-1. An object of type `int` is created in memory and assigned a value of `300`.
-2. A name `a` is created in the current namespace and points to the address of the object.
-3. Hence, when `a` is called from the prompt, the interpreter fetches the content from memory, ie.. `300`.
+### 2.2. `id()`, `is`, and `==`
 
-4. When `a` is assigned `400`, a new object is created in memory with a value of `400`.
-5. The name `a` in the namespace is now set to point to the new object `400`.
-6. Since the object with value `300` is not referenced anymore, it is garbage collected.
-
-***
-
-### 2.2. `id()`, `is` and `==`
-
-The builtins `id()`, as well as `is` and `==` are valuable to understand the semantics of names in a namespace.
-
-* Example 1
+| Operator/Function | What it checks |
+| --- | --- |
+| `id(obj)` | Returns the memory address of the object (on CPython) |
+| `a is b` | True if `a` and `b` refer to the **same object** (same `id`) |
+| `a == b` | True if `a` and `b` have the **same value** (calls `__eq__`) |
 
 ```python
-In [26]: a = 400
+a = 400
+b = a
+id(a) == id(b)   # True
+a is b           # True  — same object
+a == b           # True  — same value
 
-In [27]: a
-Out[27]: 400
+b = 400          # new int object (outside the small-int cache)
+id(a) == id(b)   # False on CPython (two separate int objects)
+a is b           # False
+a == b           # True  — same value, different objects
 
-In [28]: b = a
-
-In [29]: b
-Out[29]: 400
-
-In [30]: id(a)
-Out[30]: 139736842153872
-
-In [31]: id(b)
-Out[31]: 139736842153872
-
-In [32]: a == b
-Out[32]: True
-
-In [33]: a is b
-Out[33]: True
-
-In [41]: del b
-
-In [42]: b
----------------------------------------------------------------------------
-NameError                                 Traceback (most recent call last)
-<ipython-input-42-3b5d5c371295> in <module>()
-----> 1 b
-
-NameError: name 'b' is not defined
-
-In [43]: a
-Out[43]: 400
-
-In [44]: del a
-
-In [45]: a
----------------------------------------------------------------------------
-NameError                                 Traceback (most recent call last)
-<ipython-input-45-60b725f10c9c> in <module>()
-----> 1 a
-
-NameError: name 'a' is not defined
+del b
+# b is gone from namespace; a still points to the object
+del a
+# object has no more references → garbage collected
 ```
 
-**Explanation:**
+**Rule:** Use `==` to compare values. Use `is` only when checking identity (e.g. `if x is None`, `if x is not None`) — this is the standard Python style because `None`, `True`, and `False` are singletons.
 
-1. Created an object of value `400` and assigned it a name `a`.
-2. Created another namespace variable `b` and assigned it to be `a`. This makes `b` refer the same address `a` refers to.
-3. Since both `a` and `b` refers to the same address and hence the same object, both `id(a)` and `id(b)` are same.
-4. Hence, `a == b` and `a is b` are same as well.
-5. `del b` deletes the name from the namespace, and does not touch the object in memory.
-6. Since `a` still refers to the object, it can be accessed by calling `a`.
-7. When `del a` is executed, it removes the existing reference to the object.
-8. Once no more references exist in the namespace to an object in memory, the object is garbage-collected.
-
->**IMPORTANT:**
-> `a == b` evaluates the **value of the objects** that `a` and `b` refers to.
-> `a is b` evaluates the **address of the objects** that `a` and `b` refers to.
-
->ie.. `a == b` check if both `a` and `b` has the same value
-> while `a is b` checks if both `a` and `b` refers to the exact same object (same address).
-
-* Can we use the same name in a namespace, for a different object type?
+**A single name cannot refer to multiple objects simultaneously:**
 
 ```python
-In [51]: a = 10
-
-In [52]: id(a)
-Out[52]: 139737075565888
-
-In [53]: a
-Out[53]: 10
-
-In [54]: a = "Walking"
-
-In [55]: id(a)
-Out[55]: 139736828783896
-
-In [56]: a
-Out[56]: 'Walking'
+a = 10
+id(a)      # address of int(10)
+a = "Walking"
+id(a)      # different address — a now points to a str object
 ```
 
-Assigning an existing name to another value/type is possible. It sets the pointer to the new type, which is an entirely different object altogether.
+---
 
-When a new object is assigned to an existing name in the namespace, it changes the reference to the new object, and no longer reference the old object.
+### 2.3. Object Attributes and Namespaces
 
->**NOTE:**
-> A single name in the namespace cannot refer to multiple objects in memory, just like a file name cannot refer to multiple file content.
-
-***
-
-### 2.3. Object Attributes and NameSpaces
-
-Objects get their attributes from the base type the object is instantiated from.
-
-Object attributes are similar to dictionaries, since the attributes of an object are names to methods within the object namespace.
+Object attributes form a namespace specific to that object. They are accessed via dot notation and stored in the object's `__dict__` (unless `__slots__` is used — see [Section 5.4](#54-__slots__)).
 
 ```python
-In [19]: a = "test"
+a = "test"
+a.__dict__    # AttributeError: str has no __dict__ (it uses C-level slots)
 
-In [20]: a.__class__
-Out[20]: str
+class Foo:
+    def __init__(self):
+        self.x = 1
+        self.y = 2
 
-In [21]: dir(a)
-Out[21]:
-['__add__',
- '__class__',
- '__contains__',
- '__delattr__',
- '__dir__',
- '__doc__',
- '__eq__',
- '__format__',
- '__ge__',
- '__getattribute__',
-...
-.....
- 'startswith',
- 'strip',
- 'swapcase',
- 'title',
- 'translate',
- 'upper',
- 'zfill']
+f = Foo()
+f.__dict__    # {'x': 1, 'y': 2}
 ```
 
-***
+For built-in types, the attribute namespace lives in the `PyTypeObject` C struct rather than a Python dict — which is why `str.__dict__` exists but `"hello".__dict__` does not.
 
-#### 2.3.1. Creating a custom namespace
+---
 
-Creating a custom name-space can help in understanding the concept of namespaces better.
+### 2.4. Creating a Custom Namespace
 
-In Python v3.3, the `types` module include a class named `SimpleNamespace` which provides a clean namespace to play with.
+`types.SimpleNamespace` (Python 3.3+) provides a clean, attribute-based namespace:
 
 ```python
 from types import SimpleNamespace
+
+ns = SimpleNamespace()
+ns.host = "localhost"
+ns.port = 8080
+
+ns               # namespace(host='localhost', port=8080)
+ns.host          # 'localhost'
+ns.__dict__      # {'host': 'localhost', 'port': 8080}
 ```
 
-* In Python v2, it's equivalent to the following custom class, ie.. create a Class and set the attributes manually.
+It is equivalent to defining a bare class:
 
 ```python
-class SimpleNamespace(object):
+class NS:
     pass
+
+ns = NS()
+ns.host = "localhost"
 ```
 
-* New methods can be assigned in the new namespace without overriding any existing ones.
+`SimpleNamespace` also supports equality comparison (two instances with the same attributes are equal) and a useful `repr`.
+
+---
+
+### 2.5. Object Reference Count
+
+`sys.getrefcount()` returns the number of references to an object. Note: the call itself adds a temporary reference, so the count is always at least 1 higher than the "true" count.
 
 ```python
-In [64]: from types import SimpleNamespace
+from sys import getrefcount
 
-In [65]: ns = SimpleNamespace()
+a = []
+getrefcount(a)      # 2  (one for 'a', one for the getrefcount argument)
 
-In [66]: ns
-Out[66]: namespace()
+b = a
+getrefcount(a)      # 3  (one more: 'b' also refers to the list)
 
-In [67]: ns.a = "A"
-
-In [68]: ns.b = "B"
-
-In [69]: ns
-Out[69]: namespace(a='A', b='B')
-
-In [70]: ns.
-ns.a  ns.b
-
-In [70]: ns.a
-Out[70]: 'A'
-
-In [71]: ns.b
-Out[71]: 'B'
-
-In [72]: ns.__dict__
-Out[72]: {'a': 'A', 'b': 'B'}
+del b
+getrefcount(a)      # 2  (back to 'a' + getrefcount temp)
 ```
 
-The `__dict__` special method is available in both Python v2 and v3, for the object, and it returns a dictionary.
+---
 
-***
+### 2.6. Integer Caching and String Interning
 
-### 2.4. Object Reference count
+CPython implements two important optimizations that affect object identity.
 
-* The class `getrefcount` from the module `sys` helps in understanding the references an object has currently.
+#### Integer caching (small-int cache)
+
+CPython pre-allocates integer objects for values in the range **-5 to 256**. These objects are singletons — every reference to the integer `5` in a CPython process points to the *same* object.
 
 ```python
-In [2]: from sys import getrefcount
+a = 100
+b = 100
+a is b      # True  — same cached object
 
-In [3]: getrefcount(None)
-Out[3]: 12405
+a = 300
+b = 300
+a is b      # False — outside the cache; two distinct objects
+a == b      # True  — same value
 
-In [4]: getrefcount(int)
-Out[4]: 113
+# Confirming the cache boundary
+(256).__class__    # int
+x, y = 256, 256
+x is y    # True
 
-In [5]: a = 10
-
-In [6]: getrefcount(a)
-Out[6]: 113
-
-In [7]: b = a
-
-In [8]: getrefcount(a)
-Out[8]: 114
-
-In [9]: getrefcount(b)
-Out[9]: 114
+x, y = 257, 257
+x is y    # False (CPython default; may vary in interactive sessions)
 ```
 
-* Python pre-creates many integer objects for effeciency reasons (Mostly speed)
+The cache is populated at interpreter start-up. Frequently used integers (0, 1, 2, …) have very high reference counts because the interpreter itself holds references.
 
 ```python
-In [1]: from sys import getrefcount
-
-In [2]: [(i, getrefcount(i)) for i in range(20)]
-Out[2]:
-[(0, 2150),
- (1, 2097),
- (2, 740),
- (3, 365),
- (4, 366),
- (5, 196),
- (6, 173),
- (7, 119),
- (8, 248),
- (9, 126),
- (10, 114),
- (11, 110),
- (12, 82),
- (13, 55),
- (14, 50),
- (15, 62),
- (16, 150),
- (17, 52),
- (18, 42),
- (19, 45)]
+[(i, getrefcount(i)) for i in range(5)]
+# [(0, ~2000), (1, ~1800), (2, ~600), ...]  — high counts from interpreter internals
 ```
 
-The left side value in the tuple shows the int, while the right side shows the number of references to it.
+#### String interning
 
-***
-
-### 2.5. Various methods to set names in a namespace
-
-There are multiple ways to set a name for an object, in a namespace.
-
-***
-
-#### 2.5.1. Direct assignment
+CPython automatically **interns** string literals that look like valid identifiers (no spaces, only alphanumeric + `_`). Interned strings are deduplicated — multiple references to the same identifier string point to the same object.
 
 ```python
-In [42]: a = 1
+a = "hello"
+b = "hello"
+a is b      # True  — both interned to the same object
 
-In [43]: b = a
+a = "hello world"     # contains a space — not automatically interned
+b = "hello world"
+a is b      # False (implementation-dependent; often False)
 
-In [44]: c = b = a
-
-In [45]: c
-Out[45]: 1
-
-In [46]: b
-Out[46]: 1
-
-In [47]: a
-Out[47]: 1
+# Force interning manually
+import sys
+a = sys.intern("hello world")
+b = sys.intern("hello world")
+a is b      # True
 ```
 
-***
+**Why it matters:** Interned strings use pointer comparison (`is`) for equality checks, which is O(1) vs O(n) for string comparison. CPython uses interning extensively for attribute name lookups — `obj.method` compares the interned string `"method"` by pointer against the interned keys in `__dict__`.
 
-#### 2.5.2. Tuple unpacking
+---
 
-Multiple names can be assigned in a single go, if the RHS values correspond the LHS names.
+### 2.7. Various Methods to Set Names in a Namespace
 
-RHS has to be iterable so that the assignment will work properly. The RHS can be a list, a tuple, or a series of data.
-
-* Calling the names one-by-one unpacks the tuple and returns the single value.
-* When all the names are called simultaneously, they are returned as a tuple.
-
+#### Direct assignment
 
 ```python
-In [48]: a, b, c = 10, 20, 30
-
-In [49]: a
-Out[49]: 10
-
-In [50]: b
-Out[50]: 20
-
-In [51]: c
-Out[51]: 30
-
-In [52]: a, b, c
-Out[52]: (10, 20, 30)
+a = 1
+b = a        # b points to the same object as a
+c = b = a    # all three names point to the same object
 ```
 
-***
-
-#### 2.5.3. Extended iterable tuple unpacking (only in Python3)
-
-This feature exists only in Python v3.
-
-The examples below are self-explanatory.
-
-* Example 1
+#### Tuple unpacking
 
 ```python
-In [54]: a, b, c, *d = "HelloWorld!"
+a, b, c = 10, 20, 30
+a, b, c      # (10, 20, 30)
 
-In [55]: a
-Out[55]: 'H'
-
-In [56]: b
-Out[56]: 'e'
-
-In [57]: c
-Out[57]: 'l'
-
-In [58]: d
-Out[58]: ['l', 'o', 'W', 'o', 'r', 'l', 'd', '!']
+# Swap without a temporary variable
+a, b = b, a  # Python creates the tuple (b, a) first, then unpacks
 ```
 
-* Example 2:
+#### Extended iterable unpacking (Python 3)
+
+The `*` operator captures the "rest" of an iterable into a list:
 
 ```python
-In [59]: a, *b, c = "HelloWorld"
+a, b, c, *d = "HelloWorld!"
+# a='H', b='e', c='l', d=['l', 'o', 'W', 'o', 'r', 'l', 'd', '!']
 
-In [60]: a
-Out[60]: 'H'
+a, *b, c = "HelloWorld"
+# a='H', b=['e','l','l','o','W','o','r','l'], c='d'
 
-In [61]: b
-Out[61]: ['e', 'l', 'l', 'o', 'W', 'o', 'r', 'l']
-
-In [62]: c
-Out[62]: 'd'
-
-In [64]: a, b, c
-Out[64]: ('H', ['e', 'l', 'l', 'o', 'W', 'o', 'r', 'l'], 'd')
+first, *_, last = range(10)
+# first=0, last=9, _=[1,2,3,4,5,6,7,8]
 ```
 
-* Example 3:
+The starred name always receives a `list`, even when the iterable is a tuple or a string.
+
+#### Importing modules
 
 ```python
-In [65]: a, *b, c = "Hi"
-
-In [66]: a
-Out[66]: 'H'
-
-In [67]: c
-Out[67]: 'i'
-
-In [68]: b
-Out[68]: []
-
-In [69]: a, b, c
-Out[69]: ('H', [], 'i')
+import os          # binds the name 'os' to the module object
+import os as o     # binds to the name 'o'
+from os import path          # binds only 'path' into the current namespace
+from os import path as p     # same, with alias
 ```
 
-#### 2.5.4. Importing modules
+---
 
-Importing modules is another way to get names into the namespace.
+### 2.8. Overwriting Builtin Names
 
-The modules could be either part of the standard library, or custom modules written by the developer.
-
-To know more on how `import` works, please refer [Section 2.9](https://github.com/arvimal/Python-Back-to-basics#29-the-import-statement)
-
-***
-
-### 2.6. Overwriting builtin names
-
-It is not a good practice to overwrite builtin names, since programs may start acting weirdly. But nevertheless, it is possible.
-
-For example, `len()` calls the dunder method `__len__()` on the object (provided the type supports `len()`), and returns the length. Imagine overwriting it with a custom value.
+Built-in names (`len`, `list`, `type`, `print`, etc.) live in the `builtins` namespace. Assigning to the same name in the local or global namespace creates a shadow — the builtin is hidden, not destroyed.
 
 ```python
-In [4]: a = "A"
+a = "hello"
+len(a)       # 5
 
-In [5]: len(a)
-Out[5]: 1
+len = "oops"
+len(a)       # TypeError: 'str' object is not callable
 
-In [6]: len = "Hello"
-
-In [7]: len(a)
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-<ipython-input-7-af8c77e09569> in <module>()
-----> 1 len(a)
-
-TypeError: 'str' object is not callable
+del len
+len(a)       # 5 — builtin is visible again
 ```
 
-Fortunately, overwriting `len` only means that it hides the builtin with the custom assignment. Deleting the custom assignment will re-instate it to the previous state, by unhiding it. The name will resolve to the builtins since it can't find the name in the local namespace.
+The name resolution order (LEGB, see below) explains why: Python finds `len` in the local/global namespace before reaching builtins. Deleting the shadow exposes the builtin again.
 
-Continuing from the previous assignments:
+The builtins namespace itself can be found via `__builtins__` in module scope and `builtins` after `import builtins`. You can — but should never — modify it directly:
 
 ```python
-In [8]: del len
-
-In [9]: len(a)
-Out[9]: 1
+import builtins
+builtins.len = lambda x: 42   # don't do this
 ```
 
-***
+---
 
-### 2.7. Function locals, Scopes, and Name lookups
+### 2.9. Scopes and the LEGB Rule
 
-As said earlier, there are different scopes, depending on where the call is made. Inner and Outer scopes.
+Python resolves names using the **LEGB** rule — four nested scopes searched in order:
 
-* Example 1 (Outer scope):
+| Scope | What it is |
+| --- | --- |
+| **L** — Local | Names defined in the current function |
+| **E** — Enclosing | Names in any enclosing functions (closures) |
+| **G** — Global | Names at module level |
+| **B** — Built-in | Names in the `builtins` module |
+
+The first match wins and the search stops.
 
 ```python
-In [16]: x = 1
+x = "global"
 
-In [17]: def outer():
-    ...:     print("%d is in outer scope" % (x))
-    ...:
+def outer():
+    x = "enclosing"
 
-In [18]: outer()
-1 is in outer scope
+    def inner():
+        # No local x — finds x in the enclosing scope
+        print(x)   # "enclosing"
+
+    inner()
+
+outer()
 ```
 
-**NOTE:**
-  1. In the code snippet above, the function is the inner scope since that is the code being executed.
-  2. `x` falls outside the inner scope, and hence is in the outer scope.
+**Local scope and `UnboundLocalError`:**
 
-Executing the function `outer()` can access the name `x`, even though `x` is outside the local scope of `outer()`.
-
-* Example 2 (Local scope):
+Python determines at compile time whether a name in a function is local (by checking if it is assigned anywhere in the function body). If a name is assigned anywhere in a function, it is treated as local throughout that function — even before the assignment.
 
 ```python
-In [24]: a = "Hello"
+x = "global"
 
-In [25]: def local():
-    ...:     a = "Hi"
-    ...:     print("%s is in the local scope" % (a))
-    ...:
+def test():
+    print(x)    # UnboundLocalError!
+    x = "local" # Because of this assignment, x is local for the entire function
 
-In [26]: local()
-Hi is in the local scope
-
-In [27]: a
-Out[27]: 'Hello'
+test()
 ```
 
-Here, `a` is called within the `local()` function. Due to the name lookup resolution method, the first lookup happens in the local scope and proceeds further out. The first hit returns the value.
+Python raises `UnboundLocalError` at the `print(x)` line because `x` is classified as a local variable (due to the assignment below it) but has not yet been assigned when `print` executes.
 
-Even though `a` was defined twice, once outside the local scope and then within the local scope, the lookup always starts in the local scope and hence used the value defined within `local()`.
+---
 
-But, calling `a` prints `Hello`, since our local scope is outside the local scope of the function `local()`. The function `local()` does not touch the variable outside its scope at all, since the same name was available within its local scope.
+### 2.10. `global` and `nonlocal`
 
-* Example 3 (Accessing a name in the local scope, before assignment)
+#### `global`
 
-Depending on where the name is and how it was referenced, the output may differ.
+Forces a name to resolve to the global (module-level) scope, even if it is assigned inside the function:
 
 ```python
-In [35]: a = "Hello"
+x = "global"
 
-In [36]: def test():
-    ...:     print("{}".format(a))
-    ...:     a = "Hi"
-    ...:
-    ...:
+def modifier():
+    global x
+    print(x)    # "global" — reads from module scope
+    x = "modified"
 
-In [37]: test()
----------------------------------------------------------------------------
-UnboundLocalError                         Traceback (most recent call last)
-<ipython-input-37-ea594c21b25d> in <module>()
-----> 1 test()
-
-<ipython-input-36-68b59252c182> in test()
-      1 def test():
-----> 2     print("{}".format(a))
-      3     a = "Hi"
-      4
-
-UnboundLocalError: local variable 'a' referenced before assignment
-
-In [38]: a
-Out[38]: 'Hello'
+modifier()
+print(x)        # "modified" — the module-level x was changed
 ```
 
-In the example above, `a` was defined both within the local scope and outer scope. But the function call errored out with an `UnboundLocalError` since the first lookup happens in the local scope, but it was defined after the reference.
+Without `global x`, the assignment `x = "modified"` would create a new local variable and leave the module-level `x` untouched.
 
-* Example 4: (Enforced access of outer scope, and overcoming `UnboundLocalError`)
+#### `nonlocal`
 
-We can enforce the reference to happen from the outer scope, using the `global()` keyword.
+Forces a name to resolve to the nearest **enclosing function scope** (not global). Used in closures and nested functions:
 
 ```python
-In [69]: a
-Out[69]: 'Hello'
+def counter():
+    count = 0
 
-In [70]: def test():
-    ...:     global a
-    ...:     print("Calling `a` from outer-scope, `a` = {}".format(a))
-    ...:     a = "Hi"
-    ...:     print("Calling `a` after setting it in local scope, `a` = {}".format(a))
-    ...:
+    def increment():
+        nonlocal count    # refers to 'count' in counter(), not a new local
+        count += 1
+        return count
 
-In [71]: a
-Out[71]: 'Hello'
+    return increment
 
-In [72]: test()
-Calling `a` from outer-scope, `a` = Hello
-Calling `a` after setting it in local scope, `a` = Hi
-
-In [81]: a
-Out[81]: 'Hi'
+c = counter()
+c()   # 1
+c()   # 2
+c()   # 3
 ```
 
-**IMPORTANT:**
->Due to the use of the `global` keyword on `a`, the inner scope of `test()` was able to manipulate the name.
->Hence, setting `a = "Hi"` within the local scope of `test()` changes the value of `a` in the outer scope.
->This can be proven by calling `a` outside the scope of `test()`.
+Without `nonlocal count`, `count += 1` would raise `UnboundLocalError` because `count` would be treated as a new local in `increment()`.
 
-* Example 5: (Accessing an outer scope using `nonlocal` keyword)
+**`nonlocal` vs `global`:**
 
-This is similar to the `global` keyword, and gives access to names in outer scopes.
+| Keyword | Scope it targets |
+| --- | --- |
+| `global x` | Module-level (global) scope |
+| `nonlocal x` | Nearest enclosing function scope (not global) |
 
-As per the [Python3 documentation on `nonlocal`](https://docs.python.org/3/reference/simple_stmts.html#nonlocal):
+---
 
+### 2.11. `locals()` and `globals()`
+
+Both return dictionaries representing the current namespace, but from different vantage points:
 
 ```python
-<Example yet to be updated>
+def demo():
+    a = 100
+    b = 1024
+    print("locals:", locals())    # {'a': 100, 'b': 1024}
+    print("globals has 'demo':", 'demo' in globals())  # True
+
+demo()
 ```
 
-### 2.8. The Built-in namespace, `locals()`, and `globals()`
-
-The `locals()` and `globals()` built-in methods help to list out the local and global scope respectively.
-
-Ideally, the local and global scope are the same since the local scope contains both local and global names. Hence `locals()` and `globals()` print out the local scope. But it can differ, depending on the code that is executed.
-
-For example, the code below will print a different local scope altogether
+- `locals()` — returns the local namespace of the current scope. **Mutating the returned dict does not affect the actual locals** (CPython uses "fast locals" — a C array, not a dict — for function frames; `locals()` copies them into a dict).
+- `globals()` — returns the module-level namespace dict. **Mutations here do affect the global namespace.**
 
 ```python
-In [38]: def hello():
-    ...:     a = 100
-    ...:     b = 1024
-    ...:     print("Printing Local scope", locals())
-    ...:     print("###############################")
-    ...:     print("Printing Global scope", globals())
-    ...:
-
-In [39]: hello()
-Printing Local scope {'b': 1024, 'a': 100}
-###############################
-Printing Global scope
-{'__name__': '__main__', '__doc__': 'Automatically created module for IPython interactive environment', '__package__': None, '__loader__': None, '__spec__': None, '__builtin__': <module 'builtins' (built-in)>, ...
-....
-...... <Long output omitted for brevity>
+x = 10
+globals()['x'] = 99
+print(x)    # 99 — global namespace was modified
 ```
 
-In the function `hello()` defined above, the local scope is restricted to the variables within the function, and hence `locals()` can only print the objects tied to the names `a` and `b`.
+**Fast locals caveat:** Inside a function, `locals()['a'] = 500` does not change the local variable `a`, because CPython function frames store locals in a fixed C array (`co_varnames`), not in the dict returned by `locals()`. The dict is a snapshot.
 
-But the global scope is the one outside of the local scope of the function `hello()`. Therefore, it prints the entire scope outside the local scope.
+---
 
-**NOTE:**
->The local scope change depending where the code is executed.
->The local scope of a function is the scope within the function, and the global scope is outside it.
+### 2.12. The `import` Statement
 
-The local and global scope are dictionaries, and the local/global namespace can be accessed through `locals()` and `globals()` builtins.
+`import` is a wrapper around the built-in `__import__()` function. It:
+
+1. Checks `sys.modules` — if the module is already loaded, reuse the cached module object (modules are singletons per interpreter).
+2. If not cached, finds the source file by searching `sys.path` in order.
+3. Compiles the source to bytecode (or loads `.pyc` from `__pycache__/`).
+4. Executes the module's top-level code in a new module namespace.
+5. Stores the module object in `sys.modules` and binds the name in the current namespace.
 
 ```python
-In [43]: a = 100
-
-In [44]: locals()['a']
-Out[44]: 100
-
-In [45]: locals()['a'] = 500
-
-In [46]: a
-Out[46]: 500
+import sys
+sys.path     # search path for modules
+sys.modules  # dict of all loaded modules (name → module object)
 ```
 
-Even though the names within a scope can be accessed as such, it's not suggested to do so. Read about `fast locals` in Python, to understand why.
-
-### 2.9. The `import` statement
-
-The `import` statement loads the content of a python module (a python source file at a pre-defined location) in memory.
-
-The methods defined in the module are thus available in the current namespace.
-
-* The `import` keyword is a wrapper around the builtin function `__import__`, defined in `__builtin__`.
+**Import variants:**
 
 ```python
-In [6]: dir(__builtin__)
-Out[6]:
-['ArithmeticError',
- 'AssertionError',
-  ...
-  .....
- '__doc__',
- '__import__',
- '__loader__',
- ..
- ...
- 'vars',
- 'zip']
-
-In [7]: print(__builtin__.__import__.__doc__)
-__import__(name, globals=None, locals=None, fromlist=(), level=0) -> module
-
-Import a module. Because this function is meant for use by the Python
-interpreter and not for general use, it is better to use
-importlib.import_module() to programmatically import a module.
-
-The globals argument is only used to determine the context;
-they are not modified.  The locals argument is unused.  The fromlist
-should be a list of names to emulate ``from name import ...'', or an
-empty list to emulate ``import name''.
-When importing a module from a package, note that __import__('A.B', ...)
-returns package A when fromlist is empty, but its submodule B when
-fromlist is not empty.  The level argument is used to determine whether to
-perform absolute or relative imports: 0 is absolute, while a positive number
-is the number of parent directories to search relative to the current module.
-
- ```
- 
-#### 2.9.1. How does `import` work?
-
-The `import` statement
-
-The steps can be summarized as:
-
-1. A `import` statement helps to bring in a module into the current namespace.
-2. The `import` statement looks into a pre-defined set of paths, for the file name to be imported.
-3. This file/module is then loaded in memory, to the specific namespace.
-4. The methods defined in the module becomes available in the current namespace.
-
-
-```python
-In [12]: import sys
-
-In [13]: sys.path
-Out[13]:
-['',
- '/usr/bin',
- '/usr/lib64/python36.zip',
- '/usr/lib64/python3.6',
- '/usr/lib64/python3.6/lib-dynload',
- '/usr/lib64/python3.6/site-packages',
- '/usr/lib/python3.6/site-packages',
- '/usr/lib/python3.6/site-packages/IPython/extensions',
- '/home/vimal/.ipython']
+import os                   # binds 'os' in current namespace
+import os as operating_sys  # binds 'operating_sys'
+from os import path         # binds 'path' directly (no 'os.' prefix needed)
+from os import *            # binds all public names from os (avoid in production)
 ```
 
-4. Upon finding the module in any of the paths, the python interpreter loads it into memory and create an object. It stops at the first occurrence of the module.=
-5. The interpreter creates a name in the current namespace which points to the object in memory.
-6. The name in the current namespace can be used to access the object's available methods.
-
-**NOTE:** The `del` builtin can be used to delete the name in the current namespace. As always, once the references are null, the objects in memory would be garbage collected.
+**Deleting an import:**
 
 ```python
-In [14]: del sys
-
-In [15]: 'sys' in dir() # Checks the presence of the name in the current namespace
-Out[15]: False
+del sys
+'sys' in dir()         # False — name removed from namespace
+'sys' in sys.modules   # True  — still cached; re-import is instant
 ```
 
-### 2.10. Assigning custom attributes to a name
-
-### 2.11. The `importlib` module
-
-https://pymotw.com/3/importlib/
-
-### 2.12. Functions and Namespaces
-
-Creating a function creates a name in the current namespace. Listing the current namespace, lists the new name.
+For programmatic imports, use `importlib`:
 
 ```python
-In [3]: def func1():
-   ...:     pass
-   ...:
-
-In [4]: dir()
-Out[4]:
-['In',
- 'Out',
- '_',
- '_2',
- '__',
- '___',
- '__builtin__',
- '__builtins__',
-..
-....
- 'exit',
- 'func1',
-....]
+import importlib
+os = importlib.import_module('os')
 ```
 
-The interpreter follows the same steps it does for creating any other objects, such as `int()`, `float()` etc. Here, the object type is a function.
+**Relative imports** (inside packages):
 
 ```python
-In [7]: type(func1)
-Out[7]: function
+from . import sibling_module       # same package
+from .. import parent_module       # parent package
+from .utils import helper_func     # specific name from sibling module
 ```
 
-The function object has attributes of its own within its scope.
+---
+
+### 2.13. Functions and Namespaces
+
+Defining a function creates a function object in memory and a name for it in the current namespace — exactly the same mechanism as for `int`, `str`, etc.
 
 ```python
-In [6]: dir(func1)
-Out[6]:
-['__annotations__',
- '__call__',
- '__class__',
- '__closure__',
- '__code__',
- '__defaults__',
- '__delattr__',
- '__dict__',
- '__dir__',
- '__doc__',
- '__eq__',
- '__format__',
- '__ge__',
- '__get__',
-..
-....
+def func1():
+    pass
+
+type(func1)     # <class 'function'>
+'func1' in dir()  # True
 ```
 
-It is possible to assign custom attributes to the function's scope as well. Please refer [Section 2.7](https://github.com/arvimal/Python-Back-to-basics#27-function-locals-scopes-and-name-lookups) for more details on how to do this, and Scopes.
-
-**NOTE:** While creating a function object, the name assigned to it goes to the current namespace, as well as the object's local scope.
+Function objects carry their own namespace attributes:
 
 ```python
-In [9]: func1
-Out[9]: <function __main__.func1>
-
-In [10]: func1.__name__
-Out[10]: 'func1'
+func1.__name__       # 'func1'
+func1.__doc__        # None (no docstring)
+func1.__module__     # '__main__'
+func1.__code__       # code object (bytecode + metadata)
+func1.__defaults__   # tuple of default argument values, or None
+func1.__closure__    # tuple of cells for closed-over variables, or None
+func1.__annotations__ # dict of parameter/return annotations
+func1.__dict__       # custom attributes attached to the function object
 ```
 
-As with any other function objects, many of the attributes can be changed. This is applicable to the `__name__` attribute as well.
+**`__name__` vs the binding in the namespace:**
 
 ```python
-In [9]: func1
-Out[9]: <function __main__.func1>
-
-In [10]: func1.__name__
-Out[10]: 'func1'
-
-In [11]: func1.__name__ = "func2"
-
-In [12]: func1.__name__
-Out[12]: 'func2'
-
-In [13]: func2
----------------------------------------------------------------------------
-NameError                                 Traceback (most recent call last)
-<ipython-input-13-c452357c830a> in <module>()
-----> 1 func2
-
-NameError: name 'func2' is not defined
+func1.__name__ = "func2"   # renames the function object's internal name
+func1.__name__    # 'func2'
+func2             # NameError — the namespace still has the name 'func1'
+func1             # works — the namespace binding is unchanged
 ```
+
+**Closures:** A function that references variables from an enclosing scope captures them as "cells" in `__closure__`:
+
+```python
+def make_adder(n):
+    def adder(x):
+        return x + n    # 'n' is a free variable
+    return adder
+
+add5 = make_adder(5)
+add5.__closure__          # (<cell at 0x...>,)
+add5.__closure__[0].cell_contents  # 5
+add5(10)                  # 15
+```
+
+The free variables referenced by a function are listed in `func.__code__.co_freevars`.
+
+---
+
+## 3. Memory Management and Garbage Collection
+
+### 3.1. Reference Counting in CPython
+
+CPython's primary memory management strategy is **reference counting**. Every `PyObject` has an `ob_refcnt` field that tracks how many references exist to it. When a reference is created (assignment, function argument, list append), `ob_refcnt` is incremented via the `Py_INCREF` macro. When a reference is dropped (`del`, function return, reassignment), `ob_refcnt` is decremented via `Py_DECREF`. When `ob_refcnt` reaches zero, `PyObject_Dealloc` is called immediately — the object is freed on the spot, not queued.
+
+```python
+import sys
+
+a = []
+sys.getrefcount(a)   # 2 (a + the getrefcount argument)
+
+b = a
+sys.getrefcount(a)   # 3
+
+del b
+sys.getrefcount(a)   # 2
+
+def f(x): pass
+f(a)
+# inside f: refcount was 3 during the call, drops to 2 after return
+```
+
+**Advantages of reference counting:**
+
+- Deterministic finalization — `__del__` is called and memory is freed immediately when the last reference drops.
+- No stop-the-world GC pauses for most objects.
+
+**Limitation:** Reference counting cannot collect **reference cycles**:
+
+```python
+a = []
+a.append(a)   # a contains a reference to itself
+del a         # ob_refcnt drops to 1, not 0 — never freed by refcounting alone
+```
+
+---
+
+### 3.2. Cycle Detection
+
+CPython includes a supplemental **cycle garbage collector** (in `gc` module) that handles reference cycles. It uses a **tri-color marking** variant.
+
+The cycle collector only tracks **container objects** that can hold references to other objects: `list`, `dict`, `set`, `tuple`, custom class instances, etc. Immutable objects that cannot contain references (small integers, strings) are not tracked.
+
+Each tracked container has a `_gc_prev` / `_gc_next` doubly-linked-list node embedded in a `PyGC_Head` header prepended to the object. The GC periodically walks these lists looking for cycles.
+
+```python
+import gc
+
+# Enable/disable the cycle collector
+gc.disable()
+gc.enable()
+gc.isenabled()   # True by default
+
+# Run a collection manually
+gc.collect()     # returns number of unreachable objects found
+
+# Inspect tracked objects
+gc.get_objects()  # list of all tracked container objects
+```
+
+---
+
+### 3.3. Generational Garbage Collection
+
+The cycle collector uses a **three-generation** scheme based on the generational hypothesis (most objects die young):
+
+| Generation | Index | Threshold (new allocations before GC triggered) |
+| --- | --- | --- |
+| Generation 0 | 0 | 700 (default) — young, recently allocated objects |
+| Generation 1 | 1 | 10 — survivors of gen 0 collection |
+| Generation 2 | 2 | 10 — long-lived objects (survive gen 1) |
+
+```python
+gc.get_threshold()     # (700, 10, 10) by default
+gc.set_threshold(1000, 15, 15)   # tune for allocation-heavy workloads
+
+gc.get_count()         # (gen0_count, gen1_count, gen2_count) — current allocation counts
+gc.collect(0)          # collect only generation 0
+gc.collect(1)          # collect gen 0 + gen 1
+gc.collect(2)          # full collection (all generations)
+gc.collect()           # same as collect(2)
+```
+
+**Lifecycle:** A new object starts in generation 0. If it survives a generation 0 collection, it is promoted to generation 1. If it survives a generation 1 collection, it is promoted to generation 2. Generation 2 objects (long-lived singletons, module objects, class objects) are collected infrequently.
+
+**`__del__` and cycles:** If any object in a reference cycle defines `__del__`, CPython historically could not determine a safe finalization order and moved such cycles to `gc.garbage` (an uncollectable list). As of Python 3.4 (PEP 442), `__del__` objects in cycles are handled correctly — `__del__` is called in an unspecified order, then the cycle is broken.
+
+---
+
+### 3.4. Weak References
+
+A **weak reference** holds a reference to an object without incrementing `ob_refcnt`. The object can be garbage-collected even while weak references to it exist. When the object is collected, the weak reference becomes `None` (or a callback fires).
+
+```python
+import weakref
+
+class Expensive:
+    def __init__(self, name):
+        self.name = name
+
+obj = Expensive("cache-entry")
+ref = weakref.ref(obj)
+
+ref()          # <__main__.Expensive object at 0x...>
+ref() is obj   # True
+
+del obj
+ref()          # None — object was collected
+```
+
+**`weakref.WeakValueDictionary`** — a dict where values are weak references:
+
+```python
+cache = weakref.WeakValueDictionary()
+obj = Expensive("item")
+cache["key"] = obj
+
+del obj          # obj is collected
+cache.get("key") # None — cleaned up automatically
+```
+
+Use cases:
+
+- Caches that should not prevent GC of their entries.
+- Observers/callbacks that should not keep the observed object alive.
+- Avoiding reference cycles in parent↔child relationships (child holds a weak ref to parent).
+
+---
+
+## 4. Bytecode and the CPython VM
+
+### 4.1. Compilation Pipeline
+
+When Python runs a `.py` file or executes a function, it goes through these stages:
+
+```text
+Source (.py)
+    ↓ lexer (tokenize)
+Tokens
+    ↓ parser
+AST (Abstract Syntax Tree)
+    ↓ compiler (ast → bytecode)
+Code Object (bytecode + constants + names)
+    ↓ CPython VM (ceval.c)
+Execution
+```
+
+The AST is visible via the `ast` module:
+
+```python
+import ast
+tree = ast.parse("x = 1 + 2")
+print(ast.dump(tree, indent=2))
+```
+
+Compiled bytecode is cached in `__pycache__/<module>.cpython-3XX.pyc` to avoid recompilation on the next import.
+
+---
+
+### 4.2. Inspecting Bytecode with `dis`
+
+The `dis` module disassembles code objects into human-readable bytecode instructions:
+
+```python
+import dis
+
+def add(a, b):
+    return a + b
+
+dis.dis(add)
+# Output:
+#   2     RESUME          0
+#   3     LOAD_FAST       0 (a)
+#         LOAD_FAST       1 (b)
+#         BINARY_OP       0 (+)
+#         RETURN_VALUE
+```
+
+Key opcodes:
+
+| Opcode | What it does |
+| --- | --- |
+| `LOAD_FAST` | Push a local variable onto the stack |
+| `LOAD_GLOBAL` | Push a global/builtin name onto the stack |
+| `LOAD_CONST` | Push a constant (integer literal, string literal, etc.) |
+| `STORE_FAST` | Pop top of stack, store as a local variable |
+| `BINARY_OP` | Pop two items, apply operator, push result |
+| `CALL` | Call a callable with N arguments from the stack |
+| `RETURN_VALUE` | Return the top of the stack to the caller |
+| `BUILD_LIST` | Build a list from N items on the stack |
+| `GET_ITER` | Push an iterator for the top-of-stack object |
+| `FOR_ITER` | Advance iterator; jump if exhausted |
+| `JUMP_BACKWARD` | Loop back to a target instruction |
+
+The CPython VM is a **stack machine** — most instructions operate on a value stack, pushing and popping `PyObject*` pointers.
+
+---
+
+### 4.3. Code Objects
+
+Every function and module has a **code object** (`types.CodeType`) that bundles the bytecode with its metadata:
+
+```python
+def greet(name, greeting="Hello"):
+    msg = f"{greeting}, {name}!"
+    return msg
+
+code = greet.__code__
+code.co_name          # 'greet'
+code.co_varnames      # ('name', 'greeting', 'msg') — local variable names
+code.co_freevars      # () — closed-over variables (non-empty for closures)
+code.co_consts        # (None, '{}...')  — constants
+code.co_argcount      # 2  — number of positional arguments
+code.co_stacksize     # max stack depth needed at runtime
+code.co_filename      # source file
+code.co_firstlineno   # line number of the def statement
+```
+
+Code objects are **immutable** and **shared** — if you define the same lambda in a loop, each call creates a new function object (with potentially different closures) but they all share the same code object.
+
+---
+
+### 4.4. The Global Interpreter Lock (GIL)
+
+CPython has a **Global Interpreter Lock** — a mutex that ensures only one thread executes Python bytecode at a time. It protects CPython's non-thread-safe internals (especially reference counting) from data races.
+
+**Implications:**
+
+| Workload | GIL impact |
+| --- | --- |
+| **CPU-bound** (computation) | GIL is a bottleneck — threads cannot run Python code in parallel on multiple cores |
+| **I/O-bound** (network, file, subprocess) | GIL is released during I/O waits — threads work well |
+| **C extensions** | Many (NumPy, Pillow, etc.) release the GIL during pure C computation — parallelism is possible |
+
+**Workarounds for CPU-bound work:**
+
+```python
+# multiprocessing — separate processes, each with its own GIL
+from multiprocessing import Pool
+with Pool(4) as p:
+    results = p.map(expensive_function, items)
+
+# concurrent.futures.ProcessPoolExecutor (higher level)
+from concurrent.futures import ProcessPoolExecutor
+with ProcessPoolExecutor() as ex:
+    results = list(ex.map(expensive_function, items))
+```
+
+**Python 3.13+ (PEP 703):** The free-threaded build (`--disable-gil`) is experimental. It replaces per-object refcounting with atomic operations and removes the GIL, allowing true multi-core Python execution. Not yet the default.
+
+The GIL is released every `sys.getswitchinterval()` seconds (default: 5ms) or when a blocking I/O call is made, allowing other threads to run.
+
+---
+
+## 5. The Descriptor Protocol
+
+### 5.1. How Attribute Lookup Works
+
+When you access `obj.attr`, Python does not simply look in `obj.__dict__`. The full lookup chain is:
+
+1. Look in `type(obj).__mro__` for a **data descriptor** — an object with both `__get__` and `__set__` (or `__delete__`). If found, call `descriptor.__get__(obj, type(obj))`.
+2. Look in `obj.__dict__` (the instance dict). If found, return the value.
+3. Look in `type(obj).__mro__` for a **non-data descriptor** or a plain class attribute. If a non-data descriptor, call `__get__`.
+4. Raise `AttributeError`.
+
+This order ensures that data descriptors (e.g. `property`) take priority over instance `__dict__` entries, which take priority over non-data descriptors (e.g. functions/methods).
+
+---
+
+### 5.2. Data vs Non-data Descriptors
+
+A **descriptor** is any object that defines `__get__`, `__set__`, or `__delete__` in its class.
+
+| Type | Methods defined | Priority vs instance dict |
+| --- | --- | --- |
+| **Data descriptor** | `__get__` + `__set__` (and/or `__delete__`) | Higher — overrides instance dict |
+| **Non-data descriptor** | Only `__get__` | Lower — instance dict wins |
+
+```python
+class Descriptor:
+    def __get__(self, obj, objtype=None):
+        print(f"__get__ called on {obj}")
+        return 42
+
+    def __set__(self, obj, value):
+        print(f"__set__ called with {value}")
+
+class MyClass:
+    attr = Descriptor()   # class-level descriptor
+
+m = MyClass()
+m.attr          # calls Descriptor.__get__(m, MyClass) → 42
+m.attr = 99     # calls Descriptor.__set__(m, 99)
+```
+
+Functions are **non-data descriptors** — they implement `__get__` to return a bound method object when accessed via an instance. That is how `obj.method()` becomes `MyClass.method(obj)`:
+
+```python
+class Foo:
+    def bar(self): return self
+
+f = Foo()
+Foo.__dict__['bar']        # <function Foo.bar at 0x...>
+Foo.__dict__['bar'].__get__(f, Foo)  # <bound method Foo.bar of <Foo ...>>
+f.bar                      # same — attribute lookup triggers __get__
+```
+
+---
+
+### 5.3. `property` as a Descriptor
+
+`property` is a built-in data descriptor that provides managed attribute access with getter/setter/deleter semantics:
+
+```python
+class Circle:
+    def __init__(self, radius):
+        self._radius = radius
+
+    @property
+    def radius(self):
+        return self._radius
+
+    @radius.setter
+    def radius(self, value):
+        if value < 0:
+            raise ValueError("radius must be non-negative")
+        self._radius = value
+
+    @property
+    def area(self):
+        import math
+        return math.pi * self._radius ** 2
+
+c = Circle(5)
+c.radius        # 5 — calls getter
+c.radius = 10   # calls setter
+c.radius = -1   # ValueError
+c.area          # 314.159...
+```
+
+Under the hood, `@property` creates a `property` object with `__get__`, `__set__`, and `__delete__` methods. Because `property` is a data descriptor, `c.radius` calls `property.__get__` even if `c.__dict__` has a key `'radius'`.
+
+---
+
+### 5.4. `__slots__`
+
+By default, each instance stores its attributes in a per-instance `__dict__`. This dict has overhead: ~200–300 bytes for an empty dict, plus pointer storage per key.
+
+`__slots__` replaces the per-instance `__dict__` with a fixed C array of slots — one per declared attribute:
+
+```python
+class Point:
+    __slots__ = ('x', 'y')
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+p = Point(1, 2)
+p.x         # 1
+p.z = 3     # AttributeError — z is not in __slots__
+p.__dict__  # AttributeError — no __dict__ on slots-only class
+```
+
+Each slot is implemented as a **data descriptor** at the class level — that is why attribute access is fast and why undeclared attributes are rejected.
+
+**Memory comparison:**
+
+```python
+import sys
+
+class WithDict:
+    def __init__(self): self.x = self.y = 0
+
+class WithSlots:
+    __slots__ = ('x', 'y')
+    def __init__(self): self.x = self.y = 0
+
+sys.getsizeof(WithDict())    # ~48 + dict overhead (~200)
+sys.getsizeof(WithSlots())   # ~56 — compact, no __dict__
+```
+
+**Tradeoffs:**
+
+| Concern | `__dict__` | `__slots__` |
+| --- | --- | --- |
+| Memory per instance | Higher (dict overhead) | Lower (C array) |
+| Attribute access speed | Slightly slower (dict lookup) | Faster (offset into array) |
+| Dynamic attributes | Allowed | Not allowed |
+| Multiple inheritance | Works naturally | Careful: all classes in MRO must cooperate |
+| Pickling | Works by default | Requires `__getstate__`/`__setstate__` |
+
+Use `__slots__` when creating millions of instances and memory is a concern (e.g. data records, AST nodes, game entities).
+
+---
+
+## 6. Metaclasses
+
+### 6.1. `type` is the Metaclass of All Classes
+
+A **metaclass** is the class of a class. Just as an object is an instance of its class, a class is an instance of its metaclass. The default metaclass for all classes is `type`.
+
+```python
+class Foo: pass
+
+type(Foo)        # <class 'type'>
+type(type)       # <class 'type'>   — type is its own metaclass
+type(object)     # <class 'type'>
+isinstance(Foo, type)   # True
+
+# Creating a class with type() directly
+Bar = type('Bar', (object,), {'x': 42, 'greet': lambda self: 'hi'})
+Bar.x        # 42
+Bar().greet() # 'hi'
+```
+
+`type(name, bases, namespace)` — this three-argument form dynamically creates a new class. The `class` statement is syntactic sugar for calling the metaclass.
+
+---
+
+### 6.2. `__new__` vs `__init__`
+
+`__new__` allocates and returns the new instance; `__init__` initializes it. `__new__` runs first.
+
+```python
+class MyClass:
+    def __new__(cls, *args, **kwargs):
+        print(f"__new__ called, cls={cls}")
+        instance = super().__new__(cls)
+        return instance
+
+    def __init__(self, value):
+        print(f"__init__ called, value={value}")
+        self.value = value
+
+obj = MyClass(42)
+# __new__ called, cls=<class 'MyClass'>
+# __init__ called, value=42
+```
+
+Key distinction:
+
+| | `__new__` | `__init__` |
+| --- | --- | --- |
+| **Purpose** | Allocate and return the instance | Configure the already-allocated instance |
+| **Receives** | `cls` (the class) | `self` (the new instance) |
+| **Must return** | The new instance (or None to skip `__init__`) | Nothing (`None`) |
+
+`__new__` is used for:
+
+- **Singletons** — return the existing instance if one already exists.
+- **Immutable types** — `int`, `str`, `tuple` are immutable; customization must happen in `__new__` since by the time `__init__` runs, the value is already set.
+- **Custom memory pools or instance caches.**
+
+```python
+# Singleton via __new__
+class Singleton:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+a = Singleton()
+b = Singleton()
+a is b   # True
+```
+
+---
+
+### 6.3. Custom Metaclasses
+
+A custom metaclass can intercept class creation — useful for registering subclasses, enforcing interfaces, adding methods, etc.
+
+```python
+class RegistryMeta(type):
+    registry = {}
+
+    def __new__(mcs, name, bases, namespace):
+        cls = super().__new__(mcs, name, bases, namespace)
+        if bases:   # skip the base class itself
+            RegistryMeta.registry[name] = cls
+        return cls
+
+class Plugin(metaclass=RegistryMeta):
+    pass
+
+class AudioPlugin(Plugin):
+    pass
+
+class VideoPlugin(Plugin):
+    pass
+
+RegistryMeta.registry
+# {'AudioPlugin': <class '__main__.AudioPlugin'>, 'VideoPlugin': <class '__main__.VideoPlugin'>}
+```
+
+Metaclass hooks:
+
+| Hook | When it runs | Use for |
+| --- | --- | --- |
+| `__prepare__(mcs, name, bases)` | Before the class body executes | Return a custom namespace dict (e.g. `OrderedDict`) |
+| `__new__(mcs, name, bases, ns)` | After class body executes | Create and return the class object |
+| `__init__(cls, name, bases, ns)` | After `__new__` | Additional initialization |
+| `__call__(cls, *args, **kwargs)` | When the class is called to create instances | Override instance creation |
+
+Modern alternative: for many metaclass use cases, `__init_subclass__` (PEP 487, Python 3.6) is simpler:
+
+```python
+class Base:
+    subclasses = []
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        Base.subclasses.append(cls)
+
+class A(Base): pass
+class B(Base): pass
+
+Base.subclasses   # [<class 'A'>, <class 'B'>]
+```
+
+`__init_subclass__` is called on the base class whenever a subclass is defined — no metaclass needed.
+
+---
+
+## Sources
+
+- [Python Data Model](https://docs.python.org/3/reference/datamodel.html) — official reference
+- [Python Internals blog](https://realpython.com/cpython-source-code-guide/) — CPython source walkthrough
+- [PEP 3135](https://peps.python.org/pep-3135/) — `super()` and `__class__`
+- [PEP 442](https://peps.python.org/pep-0442/) — Safe object finalization (`__del__` with cycles)
+- [PEP 487](https://peps.python.org/pep-0487/) — `__init_subclass__` and `__set_name__`
+- [PEP 703](https://peps.python.org/pep-0703/) — Making the GIL optional
+- [Fluent Python](https://www.oreilly.com/library/view/fluent-python-2nd/9781492056348/) — Luciano Ramalho
